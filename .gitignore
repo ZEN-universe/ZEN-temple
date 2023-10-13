@@ -1,0 +1,12 @@
+venv
+*.egg-info
+uploads
+__pycache__
+.env
+
+public/*
+!public/.keep
+
+.vscode
+
+outputs

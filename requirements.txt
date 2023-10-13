@@ -1,0 +1,16 @@
+fastapi
+sqlmodel
+uvicorn
+python-dotenv
+pydantic[email]
+python-multipart
+pytest
+python-jose
+alembic
+types-python-jose
+flake8
+mypy
+pandas-stubs
+psycopg2-binary
+# git+ssh://git@github.com/RRE-ETH/ZEN-garden.git@development_ZENx_VM
+-e /home/vinzenz/dev/ZEN-garden
