@@ -10,10 +10,13 @@ class Solution(SQLModel, table=True):
     folder_name: str
     name: str
     nodes: list[str] = Field(default=[], sa_column=Column(postgresql.ARRAY(String())))
-    techologies: list[str] = Field(
+    technologies: list[str] = Field(
         default=[], sa_column=Column(postgresql.ARRAY(String()))
     )
     carriers: list[str] = Field(
+        default=[], sa_column=Column(postgresql.ARRAY(String()))
+    )
+    scenarios: list[str] = Field(
         default=[], sa_column=Column(postgresql.ARRAY(String()))
     )
 
@@ -21,7 +24,7 @@ class Solution(SQLModel, table=True):
 class SolutionDataframe(BaseModel):
     component: str
     yearly: bool = False
-    node_edit: Optional[bool] = None
+    node_edit: Optional[str] = None
     sum_techs: bool = False
     tech_type: Optional[str] = None
     reference_carrier: Optional[str] = None
