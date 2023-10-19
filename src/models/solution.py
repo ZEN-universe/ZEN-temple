@@ -2,7 +2,14 @@ from sqlmodel import Field, SQLModel, Column, String
 from sqlalchemy.dialects import postgresql
 from pydantic import BaseModel
 from typing import Optional
+from enum import Enum
 from uuid import UUID, uuid4
+from pprint import pprint
+
+
+class SeriesBehaviour(Enum):
+    sum = "sum"
+    series = "series"
 
 
 class Solution(SQLModel, table=True):
@@ -21,7 +28,26 @@ class Solution(SQLModel, table=True):
     )
 
 
-class SolutionDataframe(BaseModel):
+class IndexSet(BaseModel):
+    index_title: str
+    behaviour: SeriesBehaviour = SeriesBehaviour.series
+    indices: list[str] = []
+
+
+class DataRequest(BaseModel):
+    default: SeriesBehaviour = SeriesBehaviour.series
+    index_sets: list[IndexSet] = []
+
+
+class CompleteDataRequest(BaseModel):
+    solution_name: str
+    component: str
+    scenario: str = "scenario_"
+    data_request: DataRequest
+    aggregate_years: bool = False
+
+
+class ResultsRequest(BaseModel):
     component: str
     yearly: bool = False
     node_edit: Optional[str] = None
@@ -29,3 +55,50 @@ class SolutionDataframe(BaseModel):
     tech_type: Optional[str] = None
     reference_carrier: Optional[str] = None
     scenario: Optional[str] = None
+
+    def to_data_request(self, solution_name: str) -> CompleteDataRequest:
+        data_request = DataRequest()
+        index_sets: list[IndexSet] = []
+
+        if self.node_edit is not None and self.node_edit != "all":
+            index_sets.append(
+                IndexSet(
+                    index_title="node",
+                    behaviour=SeriesBehaviour.series,
+                    indices=[self.node_edit],
+                )
+            )
+
+        if (
+            self.sum_techs is not None or self.tech_type
+        ) is not None and self.tech_type != "all":
+            tech_index = IndexSet(
+                index_title="technology", behaviour=SeriesBehaviour.series
+            )
+            if self.sum_techs:
+                tech_index.behaviour = SeriesBehaviour.sum
+            if self.tech_type is not None:
+                tech_index.indices = [self.tech_type]
+            index_sets.append(tech_index)
+
+        if self.reference_carrier is not None and self.reference_carrier != "all":
+            index_sets.append(
+                IndexSet(
+                    index_title="carrier",
+                    behaviour=SeriesBehaviour.series,
+                    indices=[self.reference_carrier],
+                )
+            )
+
+        data_request.index_sets = index_sets
+
+        request = CompleteDataRequest(
+            solution_name=solution_name,
+            component=self.component,
+            data_request=data_request,
+        )
+
+        if self.scenario is not None:
+            request.scenario = "scenario_" + self.scenario
+        pprint(request.dict())
+        return request

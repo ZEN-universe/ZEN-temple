@@ -5,7 +5,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from ..dependencies.database import get_session
-from ..models.solution import SolutionDataframe
+from ..models.solution import ResultsRequest, CompleteDataRequest
 
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
@@ -18,7 +18,13 @@ async def get_list(
     return solution_repository.get_list(db_session)
 
 
+@router.post("/get_data")
+async def get_data(request: CompleteDataRequest) -> str:
+    ans = solution_repository.get_data(request)
+    return ans
+
+
 @router.post("/{solution_name}/df")
-async def get_dataframe(solution_name: str, df_request: SolutionDataframe) -> str:
-    ans = solution_repository.get_dataframe(solution_name, df_request)
+async def get_dataframe(solution_name: str, df_request: ResultsRequest) -> str:
+    ans = solution_repository.get_dataframe_new(solution_name, df_request)
     return ans
