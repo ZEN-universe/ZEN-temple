@@ -5,10 +5,18 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from ..dependencies.database import get_session
-from ..models.solution import ResultsRequest, CompleteDataRequest
+from ..models.solution import ResultsRequest
+from ..utils.component_container import ComponentInfo
 
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
+
+
+@router.get("/{solution_name}")
+async def get_details(
+    db_session: Annotated[Session, Depends(get_session)],
+) -> list[Solution]:
+    return solution_repository.get_list(db_session)
 
 
 @router.get("/list")
@@ -18,9 +26,9 @@ async def get_list(
     return solution_repository.get_list(db_session)
 
 
-@router.post("/get_data")
-async def get_data(request: CompleteDataRequest) -> str:
-    ans = solution_repository.get_data(request)
+@router.get("/{solution_name}/{scenario}/components")
+async def get_components(solution_name: str, scenario: str) -> list[ComponentInfo]:
+    ans = solution_repository.get_components(solution_name, scenario)
     return ans
 
 

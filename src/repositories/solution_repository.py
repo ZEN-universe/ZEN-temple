@@ -6,15 +6,7 @@ from sqlalchemy.orm import Session
 from sqlmodel import select
 import pandas as pd
 from time import perf_counter
-import numpy.typing as npt
-import numpy as np
-from ..utils.numpy_utils import (
-    summarize_np_array,
-    IndexType,
-    create_deep_csv,
-    aggregate_time_steps,
-)
-import json
+from ..utils.component_container import ComponentContainer, ComponentInfo
 from fastapi import HTTPException
 
 
@@ -33,37 +25,19 @@ class SolutionRepository:
             request.scenario,
         )
 
-        ndarray_path = os.path.join(base_path, request.component + ".npy")
-        index_path = os.path.join(base_path, request.component + ".json")
+        try:
+            component_container = ComponentContainer.load(request.component, base_path)
+        except ValueError:
+            raise HTTPException(404, "Scenario or Component not found.")
 
-        with open(index_path, "r") as f:
-            index: IndexType | None = json.load(f)
+        summarized_container = component_container.summarize_np_array(
+            request.data_request
+        )
 
-        if index is None:
-            raise HTTPException(status_code=404, detail="Could not find data index.")
+        if request.aggregate_years and not summarized_container.info.yearly:
+            summarized_container = summarized_container.aggregate_time_steps()
 
-        np_array: npt.NDArray[np.float_] = np.load(ndarray_path)
-
-        result, index = summarize_np_array(np_array, index, request.data_request)
-
-        if request.aggregate_years:
-            system_path = os.path.join(solution_folder, "system.json")
-            with open(system_path, "r") as f:
-                system_dict = json.load(f)
-
-            time_steps = 1
-
-            if "aggregated_time_steps_per_year" in system_dict:
-                time_steps = system_dict["aggregated_time_steps_per_year"]
-
-            result, index = aggregate_time_steps(np_array, time_steps, index=index)
-
-            if index is None:
-                raise HTTPException(
-                    status_code=404, detail="Could not succesfully create index."
-                )
-
-        if result.size > config.MAXIMUM_RESULT_SIZE:
+        if summarized_container.data.size > config.MAXIMUM_RESULT_SIZE:
             raise HTTPException(
                 status_code=413,
                 detail="""
@@ -71,13 +45,13 @@ class SolutionRepository:
                 Consider selecting a subset of indices or aggregate over years.
                 """,
             )
-
-        res = create_deep_csv(result, index)
+        res = summarized_container.create_deep_csv()
 
         return res
 
     def get_dataframe_new(self, solution_name: str, df_request: ResultsRequest) -> str:
         request = df_request.to_data_request(solution_name)
+        print(request)
         return self.get_data(request)
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
@@ -106,6 +80,23 @@ class SolutionRepository:
         res = pd.melt(res, id_vars=others, var_name="year", value_vars=years)
 
         return res.to_csv()
+
+    def get_components(self, solution_name: str, scenario: str) -> list[ComponentInfo]:
+        ans: list[ComponentInfo] = []
+        solution_folder = os.path.join(
+            config.SOLUTION_FOLDER,
+            solution_name,
+            config.COMPONENTS_FOLDER_NAME,
+            scenario,
+        )
+
+        ans = [
+            ComponentInfo.from_path(os.path.join(solution_folder, i))
+            for i in os.listdir(solution_folder)
+            if i.endswith(".json")
+        ]
+
+        return ans
 
 
 solution_repository = SolutionRepository()

@@ -7,8 +7,8 @@ import os
 from typing import Any
 import json
 import h5py  # type: ignore
-import numpy as np
-from .numpy_utils import create_ndarray
+from .component_container import ComponentContainer
+from zen_garden.model.default_config import System  # type: ignore
 
 
 def update_database() -> None:
@@ -78,6 +78,9 @@ def create_components() -> None:
 
         print(f"Starting with solution {folder}")
 
+        with open(os.path.join(folder_path, "system.json"), "r") as f:
+            system = System(**json.load(f))
+
         for scenario in scenarios:
             scenario_path = os.path.join(dataframes_path, scenario)
 
@@ -108,11 +111,9 @@ def create_components() -> None:
                         )
                         continue
                     if component in dataframe_keys:
-                        numpy_array, indices = create_ndarray(
-                            file, component, dataframe_keys[component]
+                        component_container: ComponentContainer = (
+                            ComponentContainer.create_from_hdf(
+                                file, component, system, dataframe_keys[component]
+                            )
                         )
-                        np.save(dataframe_file_path, numpy_array)
-                        with open(
-                            dataframe_file_path.replace(file_ending, ".json"), "w"
-                        ) as f:
-                            json.dump(indices, f, indent=2)
+                        component_container.save(scenario_path)

@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 from uuid import UUID, uuid4
-from pprint import pprint
 
 
 class SeriesBehaviour(Enum):
@@ -96,9 +95,10 @@ class ResultsRequest(BaseModel):
             solution_name=solution_name,
             component=self.component,
             data_request=data_request,
+            aggregate_years=self.yearly,
         )
 
         if self.scenario is not None:
             request.scenario = "scenario_" + self.scenario
-        pprint(request.dict())
+
         return request

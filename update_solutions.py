@@ -1,3 +1,3 @@
-import src.utils
+import src.utils.updates
 
-src.utils.update_solutions()
+src.utils.updates.create_components()
