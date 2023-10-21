@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from ..repositories.solution_repository import solution_repository
-from ..models.solution import Solution
+from ..models.solution import Solution, CompleteDataRequest
 from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends
@@ -29,6 +29,12 @@ async def get_list(
 @router.get("/{solution_name}/{scenario}/components")
 async def get_components(solution_name: str, scenario: str) -> list[ComponentInfo]:
     ans = solution_repository.get_components(solution_name, scenario)
+    return ans
+
+
+@router.post("/get_data")
+async def get_data(request: CompleteDataRequest) -> str:
+    ans = solution_repository.get_data(request)
     return ans
 
 
