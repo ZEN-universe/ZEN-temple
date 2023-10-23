@@ -2,8 +2,6 @@ from ..config import config
 from zen_garden.postprocess.results import Results  # type: ignore
 from ..models.solution import Solution, ResultsRequest, CompleteDataRequest
 import os
-from sqlalchemy.orm import Session
-from sqlmodel import select
 import pandas as pd
 from time import perf_counter
 from ..utils.component_container import ComponentContainer, ComponentInfo
@@ -11,11 +9,8 @@ from fastapi import HTTPException
 
 
 class SolutionRepository:
-    def get_list(self, db_session: Session) -> list[Solution]:
-        query = select(Solution)
-        response = db_session.execute(query)
-        datasets = response.scalars().all()
-        return datasets
+    def get_list(self) -> list[Solution]:
+        return [Solution.from_name(i) for i in os.listdir(config.SOLUTION_FOLDER)]
 
     def get_data(self, request: CompleteDataRequest) -> str:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, request.solution_name)
@@ -24,7 +19,6 @@ class SolutionRepository:
             config.COMPONENTS_FOLDER_NAME,
             request.scenario,
         )
-
         try:
             component_container = ComponentContainer.load(request.component, base_path)
         except ValueError:
@@ -51,7 +45,6 @@ class SolutionRepository:
 
     def get_dataframe_new(self, solution_name: str, df_request: ResultsRequest) -> str:
         request = df_request.to_data_request(solution_name)
-        print(request)
         return self.get_data(request)
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
@@ -76,7 +69,6 @@ class SolutionRepository:
         res = res.reset_index()
         years = [i for i in res.columns if isinstance(i, int)]
         others = [i for i in res.columns if not isinstance(i, int)]
-        print(res)
         res = pd.melt(res, id_vars=others, var_name="year", value_vars=years)
 
         return res.to_csv()

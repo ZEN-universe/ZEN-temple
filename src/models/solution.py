@@ -3,7 +3,11 @@ from sqlalchemy.dialects import postgresql
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
+from src.config import config
+import os
+import json
 from uuid import UUID, uuid4
+from typing import Any
 
 
 class SeriesBehaviour(Enum):
@@ -25,6 +29,31 @@ class Solution(SQLModel, table=True):
     scenarios: list[str] = Field(
         default=[], sa_column=Column(postgresql.ARRAY(String()))
     )
+
+    @staticmethod
+    def from_name(name: str) -> "Solution":
+        solution = Solution()
+
+        with open(os.path.join(config.SOLUTION_FOLDER, name, "system.json")) as f:
+            system: dict[str, Any] = json.load(f)
+
+        scenarios = [
+            i
+            for i in os.listdir(os.path.join(config.SOLUTION_FOLDER, name))
+            if i.startswith("scenario_")
+        ]
+
+        if len(scenarios) == 0:
+            scenarios = ["scenario_"]
+
+        solution.carriers = system["set_carriers"]
+        solution.technologies = system["set_technologies"]
+        solution.folder_name = name.split("/")[-1]
+        solution.scenarios = scenarios
+        solution.nodes = system["set_nodes"]
+        solution.name = name.split("/")[-1]
+
+        return solution
 
 
 class IndexSet(BaseModel):

@@ -4,7 +4,6 @@ from sqlmodel import select
 from sqlmodel import Session
 from ..dependencies.database import engine
 import os
-from typing import Any
 import json
 import h5py  # type: ignore
 from .component_container import ComponentContainer
@@ -20,22 +19,9 @@ def update_database() -> None:
             solution: Solution | None = results.one_or_none()
 
             if solution is None:
-                solution = Solution()
+                solution = Solution.from_name(folder)
 
-            with open(os.path.join(config.SOLUTION_FOLDER, folder, "system.json")) as f:
-                system: dict[str, Any] = json.load(f)
-
-            with open(
-                os.path.join(config.SOLUTION_FOLDER, folder, "scenarios.json")
-            ) as f:
-                solution_json: dict[str, Any] = json.load(f)
-
-            solution.carriers = system["set_carriers"]
-            solution.technologies = system["set_technologies"]
-            solution.folder_name = folder
-            solution.scenarios = list(solution_json.keys())
-            solution.nodes = system["set_nodes"]
-            solution.name = folder
+            solution.__dict__.update(solution.dict())
             session.add(solution)
 
         session.commit()

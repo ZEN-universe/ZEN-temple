@@ -12,18 +12,11 @@ from ..utils.component_container import ComponentInfo
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
 
 
-@router.get("/{solution_name}")
-async def get_details(
-    db_session: Annotated[Session, Depends(get_session)],
-) -> list[Solution]:
-    return solution_repository.get_list(db_session)
-
-
 @router.get("/list")
 async def get_list(
     db_session: Annotated[Session, Depends(get_session)],
 ) -> list[Solution]:
-    return solution_repository.get_list(db_session)
+    return solution_repository.get_list()
 
 
 @router.get("/{solution_name}/{scenario}/components")

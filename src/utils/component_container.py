@@ -51,7 +51,8 @@ class ComponentContainer:
         ndarray_path = os.path.join(path, component_name + ".npy")
         component_info_path = os.path.join(path, component_name + ".json")
         with open(component_info_path, "r") as f:
-            component_info: ComponentInfo = ComponentInfo(**json.load(f))
+            json_data = json.load(f)
+            component_info: ComponentInfo = ComponentInfo(**json_data)
 
         np_array: npt.NDArray[np.float_] = np.load(ndarray_path)
         return ComponentContainer(np_array, component_info)
@@ -135,6 +136,7 @@ class ComponentContainer:
         """
         data = self.data
         component_info = self.info
+
         level_names = [i.title for i in component_info.levels]
         requested_level_names = [i.index_title for i in request.index_sets]
         initial_shape = data.shape
@@ -192,16 +194,16 @@ class ComponentContainer:
 
         list_indices = list(sum_indices)
         list_indices.sort()
-
         for i in list_indices:
             if nan_to_zeros:
-                result = np.nansum(result, axis=i, keepdims=keep_dimensions)
+                result = np.nansum(result, axis=i, keepdims=True)
             else:
-                result = np.sum(result, axis=i, keepdims=keep_dimensions)
+                result = np.sum(result, axis=i, keepdims=True)
 
-        new_component_info: ComponentInfo = ComponentInfo(
-            component_name=component_info.component_name
-        )
+        if not keep_dimensions:
+            result = np.squeeze(result, axis=tuple(list_indices))
+
+        new_component_info: ComponentInfo = ComponentInfo(**component_info.dict())
 
         new_levels: list[LevelInfo] = []
 
@@ -231,8 +233,7 @@ class ComponentContainer:
         return ComponentContainer(result, new_component_info)
 
     def aggregate_time_steps(
-        self,
-        time_index: Optional[int] = None,
+        self, time_index: Optional[int] = None, sequential: bool = False
     ) -> "ComponentContainer":
         data = self.data
         component_info = self.info
@@ -249,16 +250,29 @@ class ComponentContainer:
         ans[:] = np.nan
 
         for i in range(n_intervals):
-            index_list: list[slice | int] = [
+            index_list: list[slice | int | list[int]] = [
                 slice(0, size) for i, size in enumerate(new_dim)
             ]
+
+            # Create index in new ndarray
             index_list[time_index] = i
             single_index = tuple(index_list)
-            index_list[time_index] = slice(
-                i * n_steps_per_interval,
-                min((i + 1) * n_steps_per_interval, old_dim[time_index]),
-            )
+
+            # Create index of all timesteps to be summed
+            if sequential:
+                # Time steps are next to each other
+                index_list[time_index] = slice(
+                    i * n_steps_per_interval,
+                    min((i + 1) * n_steps_per_interval, old_dim[time_index]),
+                )
+            else:
+                # Years are next to each other
+                index_list[time_index] = [
+                    i + n_steps_per_interval * j for j in range(n_intervals)
+                ]
+
             range_index = tuple(index_list)
+
             ans[single_index] = data[range_index].sum(axis=time_index)
 
         if component_info is not None:
