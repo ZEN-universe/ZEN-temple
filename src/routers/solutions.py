@@ -7,6 +7,7 @@ from fastapi import Depends
 from ..dependencies.database import get_session
 from ..models.solution import ResultsRequest
 from ..utils.component_container import ComponentInfo
+from fastapi import UploadFile, status
 
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
@@ -34,4 +35,16 @@ async def get_data(request: CompleteDataRequest) -> str:
 @router.post("/{solution_name}/df")
 async def get_dataframe(solution_name: str, df_request: ResultsRequest) -> str:
     ans = solution_repository.get_dataframe_new(solution_name, df_request)
+    return ans
+
+
+@router.post("/upload", status_code=status.HTTP_201_CREATED)
+async def upload(in_file: UploadFile) -> str:
+    """
+    Creates a dataset with files
+    :param in_file: zip file containing the files to be uploaded
+    :param title: title of the dataset
+    """
+    ans = await solution_repository.upload_file(in_file)
+
     return ans

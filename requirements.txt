@@ -14,6 +14,9 @@ pandas-stubs
 psycopg2-binary
 h5py
 pandas
+python-multipart
 pyarrow
+aiofiles
+types-aiofiles
 # git+ssh://git@github.com/RRE-ETH/ZEN-garden.git@development_ZENx_VM
 -e /home/vinzenz/dev/zen/garden

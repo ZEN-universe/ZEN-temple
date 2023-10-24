@@ -5,7 +5,9 @@ import os
 import pandas as pd
 from time import perf_counter
 from ..utils.component_container import ComponentContainer, ComponentInfo
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
+import aiofiles
+from zipfile import ZipFile
 
 
 class SolutionRepository:
@@ -89,6 +91,22 @@ class SolutionRepository:
         ]
 
         return ans
+
+    async def upload_file(self, in_file: UploadFile) -> str:
+        file_path = os.path.join(config.UPLOAD_FOLDER, str(in_file.filename))
+
+        async def upload() -> None:
+            async with aiofiles.open(file_path, "wb") as out_file:
+                while content := await in_file.read():  # async read chunk
+                    await out_file.write(content)  # async write chunk
+
+        await upload()
+
+        with ZipFile(file_path, "r") as zip:
+            contents: list[str] = zip.namelist()
+            print(contents)
+
+        return "Success"
 
 
 solution_repository = SolutionRepository()

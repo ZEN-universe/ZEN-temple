@@ -13,6 +13,9 @@ class Config:
         self.CASE_FOLDER: str = os.getenv("CASE_FOLDER")  # type: ignore
         self.COMPONENTS_FOLDER_NAME: str = os.getenv("COMPONENTS_FOLDER_NAME")  # type: ignore
         self.MAXIMUM_RESULT_SIZE: int = int(os.getenv("MAXIMUM_RESULT_SIZE"))  # type: ignore
+        self.UPLOAD_FOLDER: str = os.getenv("UPLOAD_FOLDER")  # type: ignore
+
+        self.check()
 
     def check(self) -> None:
         for key, val in self.__dict__.items():

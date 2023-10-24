@@ -12,11 +12,6 @@ async def get_list() -> list[str]:
     return case_repository.get_list()
 
 
-@router.get("/upload")
-async def upload() -> list[str]:
-    return ["case_repository.get_list()"]
-
-
 @router.post("/{case_name}/solve")
 async def start(case_name: str, config: zen_garden.model.Config) -> list[str]:
     return os.listdir(config.SOLUTION_FOLDER)
