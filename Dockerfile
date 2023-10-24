@@ -1,10 +1,17 @@
-FROM python
+FROM python:3.10
+
+
+# install git
+RUN apt-get update
+RUN apt-get install -y git
 
 WORKDIR /work
 
-COPY requirements_prod.txt requirements.txt
+COPY garden /work/garden
+
+COPY temple/requirements_prod.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-COPY . .
+COPY temple .
 
-CMD ["uvicorn", "src.main:app", "--port", "8000"]
+CMD ["uvicorn","--host", "0.0.0.0", "--port", "8000",  "src.main:app"]

@@ -19,5 +19,4 @@ pyarrow
 aiofiles
 types-aiofiles
 pyarrow
-# git+ssh://git@github.com/RRE-ETH/ZEN-garden.git@development_ZENx_VM
--e /home/vinzenz/dev/zen/garden
+-e "/work/garden"

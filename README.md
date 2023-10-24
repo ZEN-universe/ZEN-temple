@@ -7,3 +7,5 @@ If chnages to the models are made, alembic is responsible for the migrations. Us
 
 Create change-scripts: `alembic revision --autogenerate -m "<message>"`
 Commit changes: `alembic upgrade head`
+
+Build Docker-Container with `sudo docker build --build-arg SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" .`
