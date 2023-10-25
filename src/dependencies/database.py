@@ -16,8 +16,8 @@ except ArgumentError:
     engine = None
 
 
-def get_session() -> Generator[Session, Any, Any]:
+def get_session() -> Optional[Generator[Session, Any, Any]]:
     if engine is None:
-        raise ArgumentError("Could not create Engine")
+        return None
     with Session(engine) as session:
         yield session
