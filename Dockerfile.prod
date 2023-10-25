@@ -14,6 +14,4 @@ RUN pip3 install -r requirements.txt
 
 COPY temple .
 
-RUN python update_solutions.py
-
 CMD ["uvicorn","--host", "0.0.0.0", "--port", "8000",  "src.main:app"]
