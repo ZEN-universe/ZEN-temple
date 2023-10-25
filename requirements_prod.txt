@@ -19,4 +19,4 @@ pyarrow
 aiofiles
 types-aiofiles
 pyarrow
--e "/garden"
+-e "/work/garden"
