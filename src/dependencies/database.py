@@ -1,16 +1,23 @@
 from sqlmodel import Session, create_engine
+from sqlalchemy.exc import ArgumentError
+from sqlalchemy.future.engine import Engine
+from typing import Optional
 
 # Load Models
 from typing import Generator, Any
 from src.config import config
 
-
-engine = create_engine(
-    config.SQLALCHEMY_DATABASE_URL,
-    connect_args={},
-)
+try:
+    engine: Optional[Engine] = create_engine(
+        config.SQLALCHEMY_DATABASE_URL,
+        connect_args={},
+    )
+except ArgumentError:
+    engine = None
 
 
 def get_session() -> Generator[Session, Any, Any]:
+    if engine is None:
+        raise ArgumentError("Could not create Engine")
     with Session(engine) as session:
         yield session
