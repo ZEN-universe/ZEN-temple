@@ -17,7 +17,5 @@ except ArgumentError:
 
 
 def get_session() -> Optional[Generator[Session, Any, Any]]:
-    if engine is None:
-        yield None
     with Session(engine) as session:
         yield session
