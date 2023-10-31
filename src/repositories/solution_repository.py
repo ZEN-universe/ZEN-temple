@@ -12,7 +12,13 @@ from zipfile import ZipFile
 
 class SolutionRepository:
     def get_list(self) -> list[Solution]:
-        return [Solution.from_name(i) for i in os.listdir(config.SOLUTION_FOLDER)]
+        ans = []
+        for folder in os.listdir(config.SOLUTION_FOLDER):
+            try:
+                ans.append(Solution.from_name(folder))
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+        return ans
 
     def get_data(self, request: CompleteDataRequest) -> str:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, request.solution_name)
@@ -26,9 +32,12 @@ class SolutionRepository:
         except ValueError:
             raise HTTPException(404, "Scenario or Component not found.")
 
-        summarized_container = component_container.summarize_np_array(
-            request.data_request
-        )
+        try:
+            summarized_container = component_container.summarize_np_array(
+                request.data_request
+            )
+        except (ValueError, AssertionError) as e:
+            raise HTTPException(500, str(e))
 
         if request.aggregate_years and not summarized_container.info.yearly:
             summarized_container = summarized_container.aggregate_time_steps()

@@ -141,7 +141,11 @@ class ComponentContainer:
         requested_level_names = [i.index_title for i in request.index_sets]
         initial_shape = data.shape
 
-        assert set(requested_level_names).issubset(set(level_names))
+        non_existing_level_names = set(requested_level_names) - set(level_names)
+
+        assert (
+            len(non_existing_level_names) == 0
+        ), f"The requested names {non_existing_level_names} are not part of the dataset (f{level_names})"
 
         for missing_name in set(level_names) - set(requested_level_names):
             new_set = IndexSet(
@@ -174,6 +178,7 @@ class ComponentContainer:
                     current_index.append(index)
             result = result[tuple(current_index)]
 
+        # decide which of the indices need to be summed
         sum_indices = set(
             [
                 level_names.index(i.index_title)
@@ -192,16 +197,17 @@ class ComponentContainer:
             )
             sum_indices = sum_indices.union(default_sums)
 
-        list_indices = list(sum_indices)
-        list_indices.sort()
-        for i in list_indices:
+        list_sum_indices = list(sum_indices)
+        list_sum_indices.sort()
+
+        for i in list_sum_indices:
             if nan_to_zeros:
                 result = np.nansum(result, axis=i, keepdims=True)
             else:
                 result = np.sum(result, axis=i, keepdims=True)
 
         if not keep_dimensions:
-            result = np.squeeze(result, axis=tuple(list_indices))
+            result = np.squeeze(result, axis=tuple(list_sum_indices))
 
         new_component_info: ComponentInfo = ComponentInfo(**component_info.dict())
 

@@ -1,4 +1,4 @@
-from src.routers import cases, solutions
+from src.routers import solutions
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -20,7 +20,6 @@ app.mount(
     "/public", StaticFiles(directory="public", follow_symlink=True), name="public"
 )
 
-app.include_router(cases.router)
 app.include_router(solutions.router)
 
 try:

@@ -49,7 +49,12 @@ def create_components() -> None:
 
     for folder in os.listdir(config.SOLUTION_FOLDER):
         folder_path = os.path.join(config.SOLUTION_FOLDER, folder)
-        folder_content = os.listdir(folder_path)
+        try:
+            folder_content = os.listdir(folder_path)
+        except NotADirectoryError:
+            print(f"{folder} is not a folder, skipping")
+            continue
+
         multiple_scenarios = False
         scenarios = [i for i in folder_content if i.startswith("scenario_")]
 
@@ -64,8 +69,12 @@ def create_components() -> None:
 
         print(f"Starting with solution {folder}")
 
-        with open(os.path.join(folder_path, "system.json"), "r") as f:
-            system = System(**json.load(f))
+        try:
+            with open(os.path.join(folder_path, "system.json"), "r") as f:
+                system = System(**json.load(f))
+        except FileNotFoundError:
+            print(f"Could not find {os.path.join(folder_path, 'system.json')}, skipping.")
+            continue
 
         for scenario in scenarios:
             scenario_path = os.path.join(dataframes_path, scenario)
@@ -87,14 +96,13 @@ def create_components() -> None:
                     continue
 
                 file_ending = ".npy"
+                skipped = []
                 for component in file.keys():
                     dataframe_file_path = os.path.join(
                         scenario_path, component + file_ending
                     )
                     if os.path.exists(dataframe_file_path):
-                        print(
-                            f"Skipping component {component}, dataframe already exists."
-                        )
+                        skipped.append(component)
                         continue
                     if component in dataframe_keys:
                         component_container: ComponentContainer = (
@@ -103,3 +111,6 @@ def create_components() -> None:
                             )
                         )
                         component_container.save(scenario_path)
+                if len(skipped) > 0:
+                    print("Skipped: ", ", ".join(skipped))
+                print("")
