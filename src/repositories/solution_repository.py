@@ -8,6 +8,7 @@ from ..utils.component_container import ComponentContainer, ComponentInfo
 from fastapi import HTTPException, UploadFile
 import aiofiles
 from zipfile import ZipFile
+from typing import Optional
 
 
 class SolutionRepository:
@@ -19,6 +20,14 @@ class SolutionRepository:
             except (FileNotFoundError, NotADirectoryError):
                 continue
         return ans
+
+    def get_total(
+        self, solution: str, component: str, scenario: Optional[str] = None
+    ) -> str:
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        results = Results(solution_folder)
+        total: pd.DataFrame = results.get_total(component, scenario=scenario)
+        return str(total.to_csv())
 
     def get_data(self, request: CompleteDataRequest) -> str:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, request.solution_name)
@@ -84,12 +93,15 @@ class SolutionRepository:
 
         return res.to_csv()
 
-    def get_components(self, solution_name: str, scenario: str) -> list[ComponentInfo]:
+    def get_components(self, solution_name: str) -> list[ComponentInfo]:
         ans: list[ComponentInfo] = []
+        components_folder = os.path.join(
+            config.SOLUTION_FOLDER, solution_name, config.COMPONENTS_FOLDER_NAME
+        )
+        scenario = os.listdir(components_folder)[0]
+
         solution_folder = os.path.join(
-            config.SOLUTION_FOLDER,
-            solution_name,
-            config.COMPONENTS_FOLDER_NAME,
+            components_folder,
             scenario,
         )
 

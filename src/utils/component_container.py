@@ -145,7 +145,8 @@ class ComponentContainer:
 
         assert (
             len(non_existing_level_names) == 0
-        ), f"The requested names {non_existing_level_names} are not part of the dataset (f{level_names})"
+        ), f"""The requested names {non_existing_level_names} are
+          not part of the dataset (f{level_names})"""
 
         for missing_name in set(level_names) - set(requested_level_names):
             new_set = IndexSet(
