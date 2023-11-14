@@ -29,6 +29,34 @@ class SolutionRepository:
         total: pd.DataFrame = results.get_total(component, scenario=scenario)
         return str(total.to_csv())
 
+    def get_energy_balance(
+        self,
+        solution: str,
+        node: str,
+        carrier: str,
+        scenario: Optional[str] = None,
+        year: Optional[int] = None,
+    ) -> str:
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        results = Results(solution_folder)
+        time_steps = results.results["system"]["unaggregated_time_steps_per_year"]
+        energy_balance: pd.DataFrame = results.get_energy_balance_df(
+            node, carrier, scenario
+        )
+        energy_balance = energy_balance.loc[
+            :, (energy_balance != 0).any(axis=0)
+        ].transpose()
+
+        energy_balance.index = energy_balance.index.rename(["variable", "technology"])
+
+        if year is None:
+            year = 0
+
+        energy_balance = energy_balance.loc[
+            :, year * time_steps : (year + 1) * time_steps
+        ]
+        return str(energy_balance.to_csv())
+
     def get_data(self, request: CompleteDataRequest) -> str:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, request.solution_name)
         base_path = os.path.join(

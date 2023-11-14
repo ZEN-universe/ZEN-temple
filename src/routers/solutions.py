@@ -35,6 +35,20 @@ async def get_total(
     return ans
 
 
+@router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
+async def get_energy_balance(
+    solution_name: str,
+    node_name: str,
+    carrier_name: str,
+    scenario: Optional[str] = None,
+    year: Optional[int] = 0
+) -> str:
+    ans = solution_repository.get_energy_balance(
+        solution_name, node_name, carrier_name, scenario, year
+    )
+    return ans
+
+
 @router.post("/{solution_name}/df")
 async def get_dataframe(solution_name: str, df_request: ResultsRequest) -> str:
     ans = solution_repository.get_dataframe_new(solution_name, df_request)

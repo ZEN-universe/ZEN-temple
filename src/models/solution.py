@@ -20,6 +20,8 @@ class Solution(SQLModel, table=True):
     folder_name: str
     name: str
     nodes: list[str] = Field(default=[], sa_column=Column(postgresql.ARRAY(String())))
+    total_hours_per_year: int
+    optimized_years: int
     technologies: list[str] = Field(
         default=[], sa_column=Column(postgresql.ARRAY(String()))
     )
@@ -32,8 +34,6 @@ class Solution(SQLModel, table=True):
 
     @staticmethod
     def from_name(name: str) -> "Solution":
-        solution = Solution()
-
         with open(os.path.join(config.SOLUTION_FOLDER, name, "system.json")) as f:
             system: dict[str, Any] = json.load(f)
 
@@ -46,12 +46,13 @@ class Solution(SQLModel, table=True):
         if len(scenarios) == 0:
             scenarios = ["scenario_"]
 
-        solution.carriers = system["set_carriers"]
-        solution.technologies = system["set_technologies"]
-        solution.folder_name = name.split("/")[-1]
-        solution.scenarios = scenarios
-        solution.nodes = system["set_nodes"]
-        solution.name = name.split("/")[-1]
+        system["carriers"] = system["set_carriers"]
+        system["technologies"] = system["set_technologies"]
+        system["folder_name"] = name.split("/")[-1]
+        system["scenarios"] = scenarios
+        system["nodes"] = system["set_nodes"]
+        system["name"] = name.split("/")[-1]
+        solution = Solution(**system)
 
         return solution
 
