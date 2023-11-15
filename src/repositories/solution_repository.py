@@ -9,6 +9,7 @@ from fastapi import HTTPException, UploadFile
 import aiofiles
 from zipfile import ZipFile
 from typing import Optional
+import time
 
 
 class SolutionRepository:
@@ -40,9 +41,18 @@ class SolutionRepository:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
         results = Results(solution_folder)
         time_steps = results.results["system"]["unaggregated_time_steps_per_year"]
+
+        if year is None:
+            year = 0
+
         energy_balance: pd.DataFrame = results.get_energy_balance_df(
-            node, carrier, scenario
+            node,
+            carrier,
+            scenario,
+            start_time_step=year * time_steps,
+            end_time_step=(year + 1) * time_steps,
         )
+        
         energy_balance = energy_balance.loc[
             :, (energy_balance != 0).any(axis=0)
         ].transpose()
@@ -52,9 +62,6 @@ class SolutionRepository:
         if year is None:
             year = 0
 
-        energy_balance = energy_balance.loc[
-            :, year * time_steps : (year + 1) * time_steps
-        ]
         return str(energy_balance.to_csv())
 
     def get_data(self, request: CompleteDataRequest) -> str:
