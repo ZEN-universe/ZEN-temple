@@ -1,6 +1,11 @@
 from ..config import config
 from zen_garden.postprocess.results import Results  # type: ignore
-from ..models.solution import Solution, ResultsRequest, CompleteDataRequest
+from ..models.solution import (
+    Solution,
+    ResultsRequest,
+    CompleteDataRequest,
+    SolutionDetail,
+)
 import os
 import pandas as pd
 from time import perf_counter
@@ -9,7 +14,6 @@ from fastapi import HTTPException, UploadFile
 import aiofiles
 from zipfile import ZipFile
 from typing import Optional
-import time
 
 
 class SolutionRepository:
@@ -22,12 +26,15 @@ class SolutionRepository:
                 continue
         return ans
 
+    def get_detail(self, solution_name: str) -> SolutionDetail:
+        return SolutionDetail.from_name(solution_name)
+
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> str:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
         results = Results(solution_folder)
-        total: pd.DataFrame = results.get_total(component, scenario=scenario)
+        total: pd.DataFrame = results.get_total(component, scenario_name=scenario)
         return str(total.to_csv())
 
     def get_energy_balance(
@@ -52,7 +59,7 @@ class SolutionRepository:
             start_time_step=year * time_steps,
             end_time_step=(year + 1) * time_steps,
         )
-        
+
         energy_balance = energy_balance.loc[
             :, (energy_balance != 0).any(axis=0)
         ].transpose()

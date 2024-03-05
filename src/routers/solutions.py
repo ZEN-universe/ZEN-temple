@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from ..repositories.solution_repository import solution_repository
-from ..models.solution import Solution, CompleteDataRequest
+from ..models.solution import Solution, CompleteDataRequest, SolutionDetail
 from ..models.solution import ResultsRequest
 from ..utils.component_container import ComponentInfo
 from fastapi import UploadFile, status
@@ -18,6 +18,12 @@ async def get_list() -> list[Solution]:
 @router.get("/{solution_name}/components")
 async def get_components(solution_name: str) -> list[ComponentInfo]:
     ans = solution_repository.get_components(solution_name)
+    return ans
+
+
+@router.get("/get_detail/{solution_name}")
+async def get_detail(solution_name: str) -> SolutionDetail:
+    ans = solution_repository.get_detail(solution_name)
     return ans
 
 
@@ -41,7 +47,7 @@ async def get_energy_balance(
     node_name: str,
     carrier_name: str,
     scenario: Optional[str] = None,
-    year: Optional[int] = 0
+    year: Optional[int] = 0,
 ) -> str:
     ans = solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year

@@ -2,7 +2,6 @@ fastapi
 sqlmodel
 uvicorn
 python-dotenv
-pydantic[email]
 python-multipart
 pytest
 python-jose
@@ -18,5 +17,7 @@ python-multipart
 pyarrow
 aiofiles
 types-aiofiles
-pyarrow
+sqlmodel
+numpy 
+pydantic
 git+ssh://git@github.com/RRE-ETH/ZEN-garden.git@development_ZENx_VM
