@@ -10,10 +10,10 @@ origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,  # type: ignore
+    allow_credentials=True,  # type: ignore
+    allow_methods=["*"],  # type: ignore
+    allow_headers=["*"],  # type: ignore
 )
 
 app.mount(
@@ -21,10 +21,11 @@ app.mount(
 )
 
 app.include_router(solutions.router)
-
+"""
 try:
     src.utils.updates.update_database()
 except Exception:
     print("Could not update database, skipping.")
 
 src.utils.updates.create_components()
+"""

@@ -143,9 +143,7 @@ class ComponentContainer:
 
         non_existing_level_names = set(requested_level_names) - set(level_names)
 
-        assert (
-            len(non_existing_level_names) == 0
-        ), f"""The requested names {non_existing_level_names} are
+        assert len(non_existing_level_names) == 0, f"""The requested names {non_existing_level_names} are
           not part of the dataset (f{level_names})"""
 
         for missing_name in set(level_names) - set(requested_level_names):
@@ -219,8 +217,8 @@ class ComponentContainer:
                 continue
             current_keys = indices[key]
             new: list[str | int]
-            if type(current_keys) is list:
-                new = [old_index.names[i] for i in current_keys]
+            if isinstance(type(current_keys), list):
+                new = [old_index.names[i] for i in current_keys]  # type: ignore
             elif type(current_keys) is slice:
                 new = old_index.names[current_keys]
             else:

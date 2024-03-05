@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel, Column, String
+from sqlmodel import Field, Column, String
 from sqlalchemy.dialects import postgresql
 from pydantic import BaseModel
 from typing import Optional
@@ -6,8 +6,9 @@ from enum import Enum
 from src.config import config
 import os
 import json
-from uuid import UUID, uuid4
 from typing import Any
+from zen_garden.model.default_config import System  # type: ignore
+from zen_garden.postprocess.results import Results  # type: ignore
 
 
 class SeriesBehaviour(Enum):
@@ -15,8 +16,35 @@ class SeriesBehaviour(Enum):
     series = "series"
 
 
-class Solution(SQLModel, table=True):
-    id: UUID = Field(primary_key=True, default_factory=uuid4)
+class ScenarioDetail(BaseModel):
+    system: System
+    reference_carrier: dict[str, str]
+
+
+class SolutionDetail(BaseModel):
+    name: str
+    folder_name: str
+    scenarios: dict[str, ScenarioDetail]
+
+    @staticmethod
+    def from_name(name: str) -> "SolutionDetail":
+        results = Results(os.path.join(config.SOLUTION_FOLDER, name))
+        reference_carriers = results.get_df("set_reference_carriers")
+
+        return SolutionDetail(
+            name=name.split("/")[-1],
+            folder_name=name.split("/")[-1],
+            scenarios={
+                scenario_name: ScenarioDetail(
+                    system=scenario.system,
+                    reference_carrier=reference_carriers[scenario_name].to_dict(),
+                )
+                for scenario_name, scenario in results.solution_loader.scenarios.items()
+            },
+        )
+
+
+class Solution(BaseModel):
     folder_name: str
     name: str
     nodes: list[str] = Field(default=[], sa_column=Column(postgresql.ARRAY(String())))
