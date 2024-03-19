@@ -62,9 +62,6 @@ class Solution(BaseModel):
 
     @staticmethod
     def from_name(name: str) -> "Solution":
-        with open(os.path.join(config.SOLUTION_FOLDER, name, "system.json")) as f:
-            system: dict[str, Any] = json.load(f)
-
         scenarios = [
             i
             for i in os.listdir(os.path.join(config.SOLUTION_FOLDER, name))
@@ -73,6 +70,15 @@ class Solution(BaseModel):
 
         if len(scenarios) == 0:
             scenarios = ["scenario_"]
+
+        system_path = os.path.join(config.SOLUTION_FOLDER, name, "system.json")
+        if not os.path.exists(system_path):
+            system_path = os.path.join(
+                config.SOLUTION_FOLDER, name, scenarios[0], "system.json"
+            )
+
+        with open(system_path) as f:
+            system: dict[str, Any] = json.load(f)
 
         system["carriers"] = system["set_carriers"]
         system["technologies"] = system["set_technologies"]
