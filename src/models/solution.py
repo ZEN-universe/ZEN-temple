@@ -19,6 +19,8 @@ class SeriesBehaviour(Enum):
 class ScenarioDetail(BaseModel):
     system: System
     reference_carrier: dict[str, str]
+    carriers_import: list[str]
+    carriers_export: list[str]
 
 
 class SolutionDetail(BaseModel):
@@ -31,16 +33,30 @@ class SolutionDetail(BaseModel):
         results = Results(os.path.join(config.SOLUTION_FOLDER, name))
         reference_carriers = results.get_df("set_reference_carriers")
 
+        scenario_details = {}
+
+        for scenario_name, scenario in results.solution_loader.scenarios.items():
+            system = scenario.system
+            reference_carrier = reference_carriers[scenario_name].to_dict()
+            df_import = results.get_df("availability_import")[scenario_name]
+            df_export = results.get_df("availability_export")[scenario_name]
+            carriers_import = list(
+                df_import.loc[df_import != 0].index.get_level_values("carrier").unique()
+            )
+            carriers_export = list(
+                df_export.loc[df_export != 0].index.get_level_values("carrier").unique()
+            )
+            scenario_details[scenario_name] = ScenarioDetail(
+                system=system,
+                reference_carrier=reference_carrier,
+                carriers_import=carriers_import,
+                carriers_export=carriers_export,
+            )
+
         return SolutionDetail(
             name=name.split("/")[-1],
             folder_name=name.split("/")[-1],
-            scenarios={
-                scenario_name: ScenarioDetail(
-                    system=scenario.system,
-                    reference_carrier=reference_carriers[scenario_name].to_dict(),
-                )
-                for scenario_name, scenario in results.solution_loader.scenarios.items()
-            },
+            scenarios=scenario_details,
         )
 
 
