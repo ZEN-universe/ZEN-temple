@@ -21,6 +21,8 @@ class ScenarioDetail(BaseModel):
     reference_carrier: dict[str, str]
     carriers_import: list[str]
     carriers_export: list[str]
+    carriers_input: dict[str, list[str]]
+    carriers_output: dict[str, list[str]]
 
 
 class SolutionDetail(BaseModel):
@@ -40,6 +42,23 @@ class SolutionDetail(BaseModel):
             reference_carrier = reference_carriers[scenario_name].to_dict()
             df_import = results.get_df("availability_import")[scenario_name]
             df_export = results.get_df("availability_export")[scenario_name]
+            df_input_carriers = results.get_df("set_input_carriers")[scenario_name]
+            df_output_carriers = results.get_df("set_output_carriers")[scenario_name]
+            carriers_input_dict = {
+                key: val.split(",") for key, val in df_input_carriers.to_dict().items()
+            }
+            carriers_output_dict = {
+                key: val.split(",") for key, val in df_output_carriers.to_dict().items()
+            }
+
+            for key in carriers_output_dict:
+                if carriers_output_dict[key] == [""]:
+                    carriers_output_dict[key] = []
+
+            for key in carriers_input_dict:
+                if carriers_input_dict[key] == [""]:
+                    carriers_input_dict[key] = []
+
             carriers_import = list(
                 df_import.loc[df_import != 0].index.get_level_values("carrier").unique()
             )
@@ -51,6 +70,8 @@ class SolutionDetail(BaseModel):
                 reference_carrier=reference_carrier,
                 carriers_import=carriers_import,
                 carriers_export=carriers_export,
+                carriers_input=carriers_input_dict,
+                carriers_output=carriers_output_dict,
             )
 
         return SolutionDetail(
