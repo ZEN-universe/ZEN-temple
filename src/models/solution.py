@@ -111,7 +111,7 @@ class Solution(BaseModel):
         system_path = os.path.join(config.SOLUTION_FOLDER, name, "system.json")
         if not os.path.exists(system_path):
             system_path = os.path.join(
-                config.SOLUTION_FOLDER, name, scenarios[0], "system.json"
+                config.SOLUTION_FOLDER, name, "scenario_", "system.json"
             )
 
         with open(system_path) as f:
