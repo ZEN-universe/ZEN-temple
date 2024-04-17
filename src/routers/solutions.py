@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from ..repositories.solution_repository import solution_repository
-from ..models.solution import Solution, CompleteDataRequest, SolutionDetail
+from ..models.solution import Solution, CompleteDataRequest, SolutionDetail, DataResult
 from ..models.solution import ResultsRequest
 from ..utils.component_container import ComponentInfo
 from fastapi import UploadFile, status
@@ -36,7 +36,7 @@ async def get_data(request: CompleteDataRequest) -> str:
 @router.get("/get_total/{solution_name}/{component_name}")
 async def get_total(
     solution_name: str, component_name: str, scenario: Optional[str] = None
-) -> str:
+) -> DataResult:
     ans = solution_repository.get_total(solution_name, component_name, scenario)
     return ans
 

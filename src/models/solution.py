@@ -147,6 +147,11 @@ class CompleteDataRequest(BaseModel):
     aggregate_years: bool = False
 
 
+class DataResult(BaseModel):
+    data_csv: str
+    unit: Optional[str]
+
+
 class ResultsRequest(BaseModel):
     component: str
     yearly: bool = False

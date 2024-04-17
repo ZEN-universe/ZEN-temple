@@ -5,6 +5,7 @@ from ..models.solution import (
     ResultsRequest,
     CompleteDataRequest,
     SolutionDetail,
+    DataResult,
 )
 import os
 import pandas as pd
@@ -31,11 +32,12 @@ class SolutionRepository:
 
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
-    ) -> str:
+    ) -> DataResult:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
         results = Results(solution_folder)
+        unit: str = results.get_unit(component, scenario_name=scenario)
         total: pd.DataFrame = results.get_total(component, scenario_name=scenario)
-        return str(total.to_csv())
+        return DataResult(data_csv=str(total.to_csv()), unit=unit)
 
     def get_energy_balance(
         self,
