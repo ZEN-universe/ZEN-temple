@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from ..repositories.solution_repository import solution_repository
 from ..models.solution import Solution, CompleteDataRequest, SolutionDetail, DataResult
 from ..models.solution import ResultsRequest
-from ..utils.component_container import ComponentInfo
 from fastapi import UploadFile, status
 from typing import Optional
 
@@ -13,12 +12,6 @@ router = APIRouter(prefix="/solutions", tags=["Solutions"])
 @router.get("/list")
 async def get_list() -> list[Solution]:
     return solution_repository.get_list()
-
-
-@router.get("/{solution_name}/components")
-async def get_components(solution_name: str) -> list[ComponentInfo]:
-    ans = solution_repository.get_components(solution_name)
-    return ans
 
 
 @router.get("/get_detail/{solution_name}")

@@ -10,7 +10,6 @@ from ..models.solution import (
 import os
 import pandas as pd
 from time import perf_counter
-from ..utils.component_container import ComponentContainer, ComponentInfo
 from fastapi import HTTPException, UploadFile
 import aiofiles
 from zipfile import ZipFile
@@ -35,8 +34,17 @@ class SolutionRepository:
     ) -> DataResult:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
         results = Results(solution_folder)
-        unit: str = results.get_unit(component, scenario_name=scenario)
+
+        try:
+            unit: pd.Series | None = results.get_unit(component, scenario_name=scenario)
+        except:
+            unit = None
+
         total: pd.DataFrame = results.get_total(component, scenario_name=scenario)
+
+        if unit is not None:
+            unit = unit.to_csv()
+
         return DataResult(data_csv=str(total.to_csv()), unit=unit)
 
     def get_energy_balance(
@@ -73,40 +81,6 @@ class SolutionRepository:
 
         return str(energy_balance.to_csv())
 
-    def get_data(self, request: CompleteDataRequest) -> str:
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, request.solution_name)
-        base_path = os.path.join(
-            solution_folder,
-            config.COMPONENTS_FOLDER_NAME,
-            request.scenario,
-        )
-        try:
-            component_container = ComponentContainer.load(request.component, base_path)
-        except ValueError:
-            raise HTTPException(404, "Scenario or Component not found.")
-
-        try:
-            summarized_container = component_container.summarize_np_array(
-                request.data_request
-            )
-        except (ValueError, AssertionError) as e:
-            raise HTTPException(500, str(e))
-
-        if request.aggregate_years and not summarized_container.info.yearly:
-            summarized_container = summarized_container.aggregate_time_steps()
-
-        if summarized_container.data.size > config.MAXIMUM_RESULT_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail="""
-                Too many datapoints.
-                Consider selecting a subset of indices or aggregate over years.
-                """,
-            )
-        res = summarized_container.create_deep_csv()
-
-        return res
-
     def get_dataframe_new(self, solution_name: str, df_request: ResultsRequest) -> str:
         request = df_request.to_data_request(solution_name)
         return self.get_data(request)
@@ -136,26 +110,6 @@ class SolutionRepository:
         res = pd.melt(res, id_vars=others, var_name="year", value_vars=years)
 
         return res.to_csv()
-
-    def get_components(self, solution_name: str) -> list[ComponentInfo]:
-        ans: list[ComponentInfo] = []
-        components_folder = os.path.join(
-            config.SOLUTION_FOLDER, solution_name, config.COMPONENTS_FOLDER_NAME
-        )
-        scenario = os.listdir(components_folder)[0]
-
-        solution_folder = os.path.join(
-            components_folder,
-            scenario,
-        )
-
-        ans = [
-            ComponentInfo.from_path(os.path.join(solution_folder, i))
-            for i in os.listdir(solution_folder)
-            if i.endswith(".json")
-        ]
-
-        return ans
 
     async def upload_file(self, in_file: UploadFile) -> str:
         file_path = os.path.join(config.UPLOAD_FOLDER, str(in_file.filename))
