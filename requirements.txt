@@ -20,4 +20,4 @@ types-aiofiles
 sqlmodel
 numpy 
 pydantic
-git+ssh://git@github.com/RRE-ETH/ZEN-garden.git@development_ZENx_VM
+git+ssh://git@github.com/RRE-ETH/ZEN-garden.git
