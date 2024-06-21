@@ -10,6 +10,7 @@ alembic
 types-python-jose
 flake8
 mypy
+numpy<2
 pandas-stubs
 psycopg2-binary
 h5py

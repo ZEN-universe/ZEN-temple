@@ -27,6 +27,7 @@ class SolutionRepository:
                 continue
         return ans
 
+    @cache
     def get_detail(self, solution_name: str) -> SolutionDetail:
         return SolutionDetail.from_name(solution_name)
 

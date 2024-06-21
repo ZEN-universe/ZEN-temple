@@ -18,6 +18,6 @@ pyarrow
 aiofiles
 types-aiofiles
 sqlmodel
-numpy 
+numpy<2
 pydantic
 git+ssh://git@github.com/RRE-ETH/ZEN-garden.git
