@@ -45,7 +45,12 @@ class SolutionRepository:
         except:
             unit = None
 
-        total: pd.DataFrame = results.get_total(component, scenario_name=scenario)
+        total: pd.DataFrame | pd.Series = results.get_total(
+            component, scenario_name=scenario
+        )
+
+        if type(total) is not pd.Series:
+            total = total.loc[~(total == 0).all(axis=1)]
 
         if unit is not None:
             unit_csv = unit.to_csv()
