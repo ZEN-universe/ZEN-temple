@@ -13,7 +13,8 @@ from time import perf_counter
 from fastapi import HTTPException, UploadFile
 import aiofiles
 from zipfile import ZipFile
-from typing import Optional
+from typing import Optional, Any
+from functools import cache
 
 
 class SolutionRepository:
@@ -29,6 +30,7 @@ class SolutionRepository:
     def get_detail(self, solution_name: str) -> SolutionDetail:
         return SolutionDetail.from_name(solution_name)
 
+    @cache
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> DataResult:
@@ -36,16 +38,20 @@ class SolutionRepository:
         results = Results(solution_folder)
 
         try:
-            unit: pd.Series | None = results.get_unit(component, scenario_name=scenario)
+            unit: pd.Series[Any] | None = results.get_unit(
+                component, scenario_name=scenario
+            )
         except:
             unit = None
 
         total: pd.DataFrame = results.get_total(component, scenario_name=scenario)
 
         if unit is not None:
-            unit = unit.to_csv()
+            unit_csv = unit.to_csv()
+        else:
+            unit_csv = None
 
-        return DataResult(data_csv=str(total.to_csv()), unit=unit)
+        return DataResult(data_csv=str(total.to_csv()), unit=unit_csv)
 
     def get_energy_balance(
         self,
@@ -81,10 +87,6 @@ class SolutionRepository:
 
         return str(energy_balance.to_csv())
 
-    def get_dataframe_new(self, solution_name: str, df_request: ResultsRequest) -> str:
-        request = df_request.to_data_request(solution_name)
-        return self.get_data(request)
-
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
         path = os.path.join(config.SOLUTION_FOLDER, solution_name)
         argument_dictionary = {
@@ -112,7 +114,7 @@ class SolutionRepository:
         return res.to_csv()
 
     async def upload_file(self, in_file: UploadFile) -> str:
-        file_path = os.path.join(config.UPLOAD_FOLDER, str(in_file.filename))
+        file_path = os.path.join("./", str(in_file.filename))
 
         async def upload() -> None:
             async with aiofiles.open(file_path, "wb") as out_file:

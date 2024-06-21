@@ -20,12 +20,6 @@ async def get_detail(solution_name: str) -> SolutionDetail:
     return ans
 
 
-@router.post("/get_data")
-async def get_data(request: CompleteDataRequest) -> str:
-    ans = solution_repository.get_data(request)
-    return ans
-
-
 @router.get("/get_total/{solution_name}/{component_name}")
 async def get_total(
     solution_name: str, component_name: str, scenario: Optional[str] = None
@@ -45,12 +39,6 @@ async def get_energy_balance(
     ans = solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year
     )
-    return ans
-
-
-@router.post("/{solution_name}/df")
-async def get_dataframe(solution_name: str, df_request: ResultsRequest) -> str:
-    ans = solution_repository.get_dataframe_new(solution_name, df_request)
     return ans
 
 
