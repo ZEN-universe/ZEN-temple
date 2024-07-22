@@ -35,7 +35,7 @@ async def get_energy_balance(
     carrier_name: str,
     scenario: Optional[str] = None,
     year: Optional[int] = 0,
-) -> str:
+) -> dict[str, str]:
     ans = solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year
     )

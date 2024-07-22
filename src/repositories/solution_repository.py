@@ -66,32 +66,20 @@ class SolutionRepository:
         carrier: str,
         scenario: Optional[str] = None,
         year: Optional[int] = None,
-    ) -> str:
+    ) -> dict[str, str]:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
         results = Results(solution_folder)
-        time_steps = results.results["system"]["unaggregated_time_steps_per_year"]
 
         if year is None:
             year = 0
 
-        energy_balance: pd.DataFrame = results.get_energy_balance_df(
-            node,
-            carrier,
-            scenario,
-            start_time_step=year * time_steps,
-            end_time_step=(year + 1) * time_steps,
+        energy_balance: dict[str, pd.DataFrame] = results.get_energy_balance_dataframes(
+            node, carrier, year, scenario
         )
 
-        energy_balance = energy_balance.loc[
-            :, (energy_balance != 0).any(axis=0)
-        ].transpose()
+        ans = {key: val.drop_duplicates().to_csv() for key, val in energy_balance.items()}
 
-        energy_balance.index = energy_balance.index.rename(["variable", "technology"])
-
-        if year is None:
-            year = 0
-
-        return str(energy_balance.to_csv())
+        return ans
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
         path = os.path.join(config.SOLUTION_FOLDER, solution_name)
