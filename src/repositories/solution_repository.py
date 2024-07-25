@@ -72,13 +72,11 @@ class SolutionRepository:
 
         if year is None:
             year = 0
-
         energy_balance: dict[str, pd.DataFrame] = results.get_energy_balance_dataframes(
             node, carrier, year, scenario
         )
-
-        ans = {key: val.drop_duplicates().to_csv() for key, val in energy_balance.items()}
-
+        ans = {key: val.drop_duplicates() for key, val in energy_balance.items()}
+        ans = {key: val.to_csv() for key, val in energy_balance.items()}
         return ans
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:

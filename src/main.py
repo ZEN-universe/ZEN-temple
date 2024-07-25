@@ -1,9 +1,21 @@
 from src.routers import solutions
+from collections.abc import AsyncIterator
+
+from contextlib import asynccontextmanager
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
-app = FastAPI()
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    FastAPICache.init(InMemoryBackend())
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = ["*"]
 

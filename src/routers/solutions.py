@@ -4,6 +4,7 @@ from ..models.solution import Solution, CompleteDataRequest, SolutionDetail, Dat
 from ..models.solution import ResultsRequest
 from fastapi import UploadFile, status
 from typing import Optional
+from fastapi_cache.decorator import cache
 
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
@@ -29,6 +30,7 @@ async def get_total(
 
 
 @router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
+@cache(expire=30000)
 async def get_energy_balance(
     solution_name: str,
     node_name: str,

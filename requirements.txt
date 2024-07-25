@@ -20,4 +20,5 @@ types-aiofiles
 sqlmodel
 numpy<2
 pydantic
+fastapi-cache2
 git+ssh://git@github.com/RRE-ETH/ZEN-garden.git
