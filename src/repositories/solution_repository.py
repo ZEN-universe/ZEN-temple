@@ -76,7 +76,7 @@ class SolutionRepository:
             node, carrier, year, scenario
         )
         ans = {key: val.drop_duplicates() for key, val in energy_balance.items()}
-        ans = {key: val.to_csv() for key, val in energy_balance.items()}
+        ans = {key: val.to_csv() for key, val in ans.items()}
         return ans
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
