@@ -20,4 +20,5 @@ pyarrow
 aiofiles
 types-aiofiles
 pyarrow
+fastapi-cache2
 -e "/work/garden"
