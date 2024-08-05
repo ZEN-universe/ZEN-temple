@@ -1,0 +1,6 @@
+fastapi
+python-dotenv
+sqlmodel
+aiofiles
+fastapi-cache2
+python-multipart

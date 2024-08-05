@@ -1,0 +1,1 @@
+export const env={"PUBLIC_TEMPLE_URL":"http://localhost:8000/"}

@@ -8,6 +8,7 @@ public/*
 !public/.keep
 
 .vscode
+.idea 
 
 outputs
 garden
