@@ -11,7 +11,6 @@ import os
 import pandas as pd
 from time import perf_counter
 from fastapi import HTTPException, UploadFile
-import aiofiles
 from zipfile import ZipFile
 from typing import Optional, Any
 from functools import cache
@@ -56,7 +55,7 @@ class SolutionRepository:
             unit_csv = unit.to_csv()
         else:
             unit_csv = None
-
+            
         return DataResult(data_csv=str(total.to_csv()), unit=unit_csv)
 
     def get_energy_balance(
@@ -76,6 +75,11 @@ class SolutionRepository:
             node, carrier, year, scenario
         )
         ans = {key: val.drop_duplicates() for key, val in energy_balance.items()}
+
+        for key, series in ans.items():
+            if type(series) is not pd.Series:
+                ans[key] = series.loc[~(series == 0).all(axis=1)]
+
         ans = {key: val.to_csv() for key, val in ans.items()}
         return ans
 
@@ -109,9 +113,10 @@ class SolutionRepository:
         file_path = os.path.join("./", str(in_file.filename))
 
         async def upload() -> None:
-            async with aiofiles.open(file_path, "wb") as out_file:
-                while content := await in_file.read():  # async read chunk
-                    await out_file.write(content)  # async write chunk
+            pass
+            #async with aiofiles.open(file_path, "wb") as out_file:
+            #    while content := await in_file.read():  # async read chunk
+            #        await out_file.write(content)  # async write chunk
 
         await upload()
 

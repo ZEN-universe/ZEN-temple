@@ -4,4 +4,4 @@ fastapi-cache2
 python-dotenv
 sqlmodel
 python-multipart
-git+ssh://git@github.com/RRE-ETH/ZEN-garden.git
+-e /home/vinzenz/dev/zen/garden

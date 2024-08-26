@@ -24,6 +24,7 @@ class ScenarioDetail(BaseModel):
     carriers_input: dict[str, list[str]]
     carriers_output: dict[str, list[str]]
     carriers_demand: list[str]
+    edges: dict[str, str]
 
 
 class SolutionDetail(BaseModel):
@@ -46,6 +47,8 @@ class SolutionDetail(BaseModel):
             df_demand = results.get_df("demand")[scenario_name]
             df_input_carriers = results.get_df("set_input_carriers")[scenario_name]
             df_output_carriers = results.get_df("set_output_carriers")[scenario_name]
+            edges = results.get_df("set_nodes_on_edges")[scenario_name]
+            edges_dict = edges.to_dict()
             carriers_input_dict = {
                 key: val.split(",") for key, val in df_input_carriers.to_dict().items()
             }
@@ -80,6 +83,7 @@ class SolutionDetail(BaseModel):
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,
                 carriers_demand=carriers_demand,
+                edges=edges_dict
             )
 
         return SolutionDetail(
