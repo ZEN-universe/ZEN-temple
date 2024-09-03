@@ -55,7 +55,7 @@ class SolutionRepository:
             unit_csv = unit.to_csv()
         else:
             unit_csv = None
-            
+
         return DataResult(data_csv=str(total.to_csv()), unit=unit_csv)
 
     def get_energy_balance(
@@ -74,9 +74,13 @@ class SolutionRepository:
         energy_balance: dict[str, pd.DataFrame] = results.get_energy_balance_dataframes(
             node, carrier, year, scenario
         )
+
         ans = {key: val.drop_duplicates() for key, val in energy_balance.items()}
 
         for key, series in ans.items():
+            if key == "demand":
+                continue
+
             if type(series) is not pd.Series:
                 ans[key] = series.loc[~(series == 0).all(axis=1)]
 
@@ -114,7 +118,7 @@ class SolutionRepository:
 
         async def upload() -> None:
             pass
-            #async with aiofiles.open(file_path, "wb") as out_file:
+            # async with aiofiles.open(file_path, "wb") as out_file:
             #    while content := await in_file.read():  # async read chunk
             #        await out_file.write(content)  # async write chunk
 
