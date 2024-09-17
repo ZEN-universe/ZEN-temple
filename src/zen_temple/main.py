@@ -1,4 +1,4 @@
-from src.routers import solutions
+from .routers import solutions
 from collections.abc import AsyncIterator
 
 import uvicorn
@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
 import webbrowser
+import os
 
 
 @asynccontextmanager
@@ -33,12 +34,12 @@ app.add_middleware(
 )
 
 app.include_router(solutions.router)
-app.mount("/explorer", StaticFiles(directory="explorer", html=True), name="explorer")
+
+explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
+app.mount("/explorer", StaticFiles(directory=explorer_path, html=True), name="explorer")
+config = uvicorn.Config("main:app", port=8000, log_level="info")
+server = uvicorn.Server(config)
 
 if __name__ == "__main__":
-    config = uvicorn.Config("main:app", port=8000, log_level="info")
-    server = uvicorn.Server(config)
-    webbrowser.open('http://localhost:8000/explorer', new=2)
-
+    webbrowser.open("http://localhost:8000/explorer", new=2)
     server.run()
-

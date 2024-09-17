@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zen_temple"
+version = "0.0.4"
+authors = [
+  { name="Vinzenz Muser", email="muserv@ethz.ch" },
+]
+description = "The visualization plattform for ZEN Garden"
+requires-python= ">=3.10"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "uvicorn",
+    "fastapi",
+    "fastapi-cache2",
+    "python-dotenv",
+    "sqlmodel",
+    "python-multipart",
+    "zen-garden"
+]
+
+[project.urls]
+Homepage = "https://github.com/ZEN-universe/ZEN-temple"
+Issues = "https://github.com/ZEN-universe/ZEN-temple/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+zen_temple = ["explorer/*", "explorer/**/*"]

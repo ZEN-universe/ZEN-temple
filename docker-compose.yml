@@ -1,0 +1,9 @@
+services:
+  temple:
+    build: .
+    environment:
+      - SOLUTION_FOLDER=/work/public/outputs
+    volumes:
+      - ./public/outputs:/work/public/outputs
+    ports:
+      - 8000:8000

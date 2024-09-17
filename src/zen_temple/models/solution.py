@@ -3,7 +3,7 @@ from sqlalchemy.dialects import postgresql
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
-from src.config import config
+from ..config import config
 import os
 import json
 from typing import Any

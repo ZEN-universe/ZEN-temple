@@ -1,6 +1,0 @@
-uvicorn
-fastapi
-fastapi-cache2
-python-dotenv
-sqlmodel
-python-multipart
