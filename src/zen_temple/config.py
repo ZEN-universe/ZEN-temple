@@ -10,7 +10,6 @@ class Config:
 
         if self.SOLUTION_FOLDER is None:
             self.SOLUTION_FOLDER = "../outputs"
-            print(f"Setting default solution folder {self.SOLUTION_FOLDER}")
 
         self.check()
 
