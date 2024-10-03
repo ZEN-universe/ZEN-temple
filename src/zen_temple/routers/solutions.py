@@ -29,6 +29,14 @@ async def get_total(
     return ans
 
 
+@router.get("/get_unit/{solution_name}/{component_name}")
+async def get_total(
+    solution_name: str, component_name: str, scenario: Optional[str] = None
+) -> Optional[str]:
+    ans = solution_repository.get_unit(solution_name, component_name, scenario)
+    return ans
+
+
 @router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
 @cache(expire=30000)
 async def get_energy_balance(

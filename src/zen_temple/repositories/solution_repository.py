@@ -38,10 +38,8 @@ class SolutionRepository:
         results = Results(solution_folder)
 
         try:
-            unit: pd.Series[Any] | None = results.get_unit(
-                component, scenario_name=scenario
-            )
-        except:
+            unit: str | None = results.get_unit(component, scenario_name=scenario)
+        except Exception as e:
             unit = None
 
         total: pd.DataFrame | pd.Series = results.get_total(
@@ -51,13 +49,20 @@ class SolutionRepository:
         if type(total) is not pd.Series:
             total = total.loc[~(total == 0).all(axis=1)]
 
-        if unit is not None:
-            unit_csv = unit.to_csv()
-        else:
-            unit_csv = None
+        return DataResult(data_csv=str(total.to_csv()), unit=unit)
 
-        return DataResult(data_csv=str(total.to_csv()), unit=unit_csv)
+    def get_unit(
+        self, solution: str, component: str, scenario: Optional[str] = None
+    ) -> Optional[str]:
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        results = Results(solution_folder)
+        try:
+            unit: str | None = results.get_unit(component, scenario_name=scenario)
+        except Exception as e:
+            unit = None
+        return unit
 
+    @cache
     def get_energy_balance(
         self,
         solution: str,
@@ -85,6 +90,7 @@ class SolutionRepository:
                 ans[key] = series.loc[~(series == 0).all(axis=1)]
 
         ans = {key: val.to_csv() for key, val in ans.items()}
+
         return ans
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
