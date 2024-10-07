@@ -14,15 +14,27 @@ from fastapi import HTTPException, UploadFile
 from zipfile import ZipFile
 from typing import Optional, Any
 from functools import cache
+from os import walk
 
 
 class SolutionRepository:
     def get_list(self) -> list[Solution]:
+        solutions_folders: set[str] = set()
         ans = []
-        for folder in os.listdir(config.SOLUTION_FOLDER):
+        for dirpath, dirnames, filenames in walk(config.SOLUTION_FOLDER):
+            if "scenarios.json" in filenames:
+                solutions_folders.add(dirpath)
+
+        solutions_folders_filtered = [
+            i
+            for i in solutions_folders
+            if "/".join(i.split("/")[:-1]) not in solutions_folders
+        ]
+
+        for folder in solutions_folders_filtered:
             try:
-                ans.append(Solution.from_name(folder))
-            except (FileNotFoundError, NotADirectoryError):
+                ans.append(Solution.from_path(folder))
+            except (FileNotFoundError, NotADirectoryError) as e:
                 continue
         return ans
 
@@ -34,7 +46,7 @@ class SolutionRepository:
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> DataResult:
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution.split("."))
         results = Results(solution_folder)
 
         try:
@@ -54,7 +66,7 @@ class SolutionRepository:
     def get_unit(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> Optional[str]:
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution.split("."))
         results = Results(solution_folder)
         try:
             unit: str | None = results.get_unit(component, scenario_name=scenario)
@@ -71,7 +83,7 @@ class SolutionRepository:
         scenario: Optional[str] = None,
         year: Optional[int] = None,
     ) -> dict[str, str]:
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, solution)
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution.split("."))
         results = Results(solution_folder)
 
         if year is None:
@@ -94,7 +106,7 @@ class SolutionRepository:
         return ans
 
     def get_dataframe(self, solution_name: str, df_request: ResultsRequest) -> str:
-        path = os.path.join(config.SOLUTION_FOLDER, solution_name)
+        path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         argument_dictionary = {
             key: val for key, val in df_request.dict().items() if val is not None
         }

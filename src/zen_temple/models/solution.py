@@ -34,7 +34,7 @@ class SolutionDetail(BaseModel):
 
     @staticmethod
     def from_name(name: str) -> "SolutionDetail":
-        results = Results(os.path.join(config.SOLUTION_FOLDER, name))
+        results = Results(os.path.join(config.SOLUTION_FOLDER, *name.split(".")))
         reference_carriers = results.get_df("set_reference_carriers")
 
         scenario_details = {}
@@ -83,7 +83,7 @@ class SolutionDetail(BaseModel):
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,
                 carriers_demand=carriers_demand,
-                edges=edges_dict
+                edges=edges_dict,
             )
 
         return SolutionDetail(
@@ -91,6 +91,11 @@ class SolutionDetail(BaseModel):
             folder_name=name.split("/")[-1],
             scenarios=scenario_details,
         )
+
+
+class Scenario(BaseModel):
+    name: str
+    sub_folder: str
 
 
 class Solution(BaseModel):
@@ -110,31 +115,29 @@ class Solution(BaseModel):
     )
 
     @staticmethod
-    def from_name(name: str) -> "Solution":
-        scenarios = [
-            i
-            for i in os.listdir(os.path.join(config.SOLUTION_FOLDER, name))
-            if i.startswith("scenario_")
-        ]
+    def from_path(path: str) -> "Solution":
+        with open(os.path.join(path, "scenarios.json"), "r") as f:
+            scenarios_json: dict = json.load(f)
 
-        if len(scenarios) == 0:
-            scenarios = ["scenario_"]
+        scenarios = list(scenarios_json.keys())
 
-        system_path = os.path.join(config.SOLUTION_FOLDER, name, "system.json")
-        if not os.path.exists(system_path):
-            system_path = os.path.join(
-                config.SOLUTION_FOLDER, name, "scenario_", "system.json"
+        scenario_path = ""
+
+        if len(scenarios_json) > 1:
+            first_scenario_name = scenarios[0]
+            scenario_path = (
+                "scenario_" + scenarios_json[first_scenario_name]["sub_folder"]
             )
 
-        with open(system_path) as f:
+        with open(os.path.join(path, scenario_path, "system.json")) as f:
             system: dict[str, Any] = json.load(f)
 
         system["carriers"] = system["set_carriers"]
         system["technologies"] = system["set_technologies"]
-        system["folder_name"] = name.split("/")[-1]
+        system["folder_name"] = path
         system["scenarios"] = scenarios
         system["nodes"] = system["set_nodes"]
-        system["name"] = name.split("/")[-1]
+        system["name"] = path.split("/")[-1]
         solution = Solution(**system)
 
         return solution
