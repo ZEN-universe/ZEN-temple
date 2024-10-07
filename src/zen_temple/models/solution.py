@@ -132,9 +132,13 @@ class Solution(BaseModel):
         with open(os.path.join(path, scenario_path, "system.json")) as f:
             system: dict[str, Any] = json.load(f)
 
+        relative_folder = path.replace(config.SOLUTION_FOLDER, "")
+        if relative_folder[0] == "/":
+            relative_folder = relative_folder[1:]
+
         system["carriers"] = system["set_carriers"]
         system["technologies"] = system["set_technologies"]
-        system["folder_name"] = path
+        system["folder_name"] = relative_folder
         system["scenarios"] = scenarios
         system["nodes"] = system["set_nodes"]
         system["name"] = path.split("/")[-1]
