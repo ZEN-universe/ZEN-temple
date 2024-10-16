@@ -25,13 +25,7 @@ class SolutionRepository:
             if "scenarios.json" in filenames:
                 solutions_folders.add(dirpath)
 
-        solutions_folders_filtered = [
-            i
-            for i in solutions_folders
-            if "/".join(i.split("/")[:-1]) not in solutions_folders
-        ]
-
-        for folder in solutions_folders_filtered:
+        for folder in solutions_folders:
             try:
                 ans.append(Solution.from_path(folder))
             except (FileNotFoundError, NotADirectoryError) as e:
@@ -42,21 +36,19 @@ class SolutionRepository:
     def get_detail(self, solution_name: str) -> SolutionDetail:
         return SolutionDetail.from_name(solution_name)
 
-    @cache
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> DataResult:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution.split("."))
         results = Results(solution_folder)
-
+        unit = self.get_unit(solution, component, scenario)
         try:
-            unit: str | None = results.get_unit(component, scenario_name=scenario)
-        except Exception as e:
-            unit = None
+            total: pd.DataFrame | pd.Series = results.get_total(
+                component, scenario_name=scenario
+            )
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=f"{component} not found!")
 
-        total: pd.DataFrame | pd.Series = results.get_total(
-            component, scenario_name=scenario
-        )
 
         if type(total) is not pd.Series:
             total = total.loc[~(total == 0).all(axis=1)]
@@ -68,8 +60,12 @@ class SolutionRepository:
     ) -> Optional[str]:
         solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution.split("."))
         results = Results(solution_folder)
+
         try:
-            unit: str | None = results.get_unit(component, scenario_name=scenario)
+            unit: str | pd.DataFrame = results.get_unit(component)
+            if type(unit) is str:
+                unit = pd.DataFrame({0: [unit]})
+            unit = str(unit.to_csv())
         except Exception as e:
             unit = None
         return unit

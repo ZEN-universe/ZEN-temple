@@ -9,6 +9,7 @@ import json
 from typing import Any
 from zen_garden.model.default_config import System  # type: ignore
 from zen_garden.postprocess.results import Results  # type: ignore
+from pathlib import Path
 
 
 class SeriesBehaviour(Enum):
@@ -31,10 +32,13 @@ class SolutionDetail(BaseModel):
     name: str
     folder_name: str
     scenarios: dict[str, ScenarioDetail]
+    version: str
 
     @staticmethod
     def from_name(name: str) -> "SolutionDetail":
-        results = Results(os.path.join(config.SOLUTION_FOLDER, *name.split(".")))
+        path = os.path.join(config.SOLUTION_FOLDER, *name.split("."))
+        relative_path = os.path.join(*name.split("."))
+        results = Results(path)
         reference_carriers = results.get_df("set_reference_carriers")
 
         scenario_details = {}
@@ -85,11 +89,14 @@ class SolutionDetail(BaseModel):
                 carriers_demand=carriers_demand,
                 edges=edges_dict,
             )
-
+        version = results.get_analysis().zen_garden_version
+        if version is None:
+            version = "0.0.0"
         return SolutionDetail(
-            name=name.split("/")[-1],
-            folder_name=name.split("/")[-1],
+            name=name,
+            folder_name=str(relative_path),
             scenarios=scenario_details,
+            version=version
         )
 
 
@@ -141,7 +148,8 @@ class Solution(BaseModel):
         system["folder_name"] = relative_folder
         system["scenarios"] = scenarios
         system["nodes"] = system["set_nodes"]
-        system["name"] = path.split("/")[-1]
+        scenario_path = Path(path).relative_to(config.SOLUTION_FOLDER)
+        system["name"] = ".".join(scenario_path.parts)
         solution = Solution(**system)
 
         return solution
