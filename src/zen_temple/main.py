@@ -23,23 +23,24 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 
-origins = ["*"]
+apiapp = FastAPI()
+apiapp.include_router(solutions.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # type: ignore
+    allow_origins=["*"],  # type: ignore
     allow_credentials=True,  # type: ignore
     allow_methods=["*"],  # type: ignore
     allow_headers=["*"],  # type: ignore
 )
 
-app.include_router(solutions.router)
+app.mount("/api", apiapp)
 
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
-app.mount("/explorer", StaticFiles(directory=explorer_path, html=True), name="explorer")
+app.mount("/", StaticFiles(directory=explorer_path, html=True), name="explorer")
 config = uvicorn.Config("main:app", port=8000, log_level="info")
 server = uvicorn.Server(config)
 
 if __name__ == "__main__":
-    webbrowser.open("http://localhost:8000/explorer", new=2)
+    webbrowser.open("http://localhost:8000/", new=2)
     server.run()

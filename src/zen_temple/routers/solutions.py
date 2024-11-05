@@ -1,10 +1,8 @@
 from fastapi import APIRouter
 from ..repositories.solution_repository import solution_repository
-from ..models.solution import Solution, CompleteDataRequest, SolutionDetail, DataResult
-from ..models.solution import ResultsRequest
+from ..models.solution import Solution, SolutionDetail, DataResult
 from fastapi import UploadFile, status
 from typing import Optional
-from fastapi_cache.decorator import cache
 
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
@@ -19,7 +17,6 @@ async def get_list() -> list[Solution]:
 async def get_detail(solution_name: str) -> SolutionDetail:
     ans = solution_repository.get_detail(solution_name)
     return ans
-
 
 @router.get("/get_total/{solution_name}/{component_name}")
 async def get_total(
@@ -38,7 +35,6 @@ async def get_total(
 
 
 @router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
-@cache(expire=30000)
 async def get_energy_balance(
     solution_name: str,
     node_name: str,

@@ -3,7 +3,6 @@ from zen_garden.postprocess.results import Results  # type: ignore
 from ..models.solution import (
     Solution,
     ResultsRequest,
-    CompleteDataRequest,
     SolutionDetail,
     DataResult,
 )
@@ -12,7 +11,7 @@ import pandas as pd
 from time import perf_counter
 from fastapi import HTTPException, UploadFile
 from zipfile import ZipFile
-from typing import Optional, Any
+from typing import Optional
 from functools import cache
 from os import walk
 
@@ -28,7 +27,7 @@ class SolutionRepository:
         for folder in solutions_folders:
             try:
                 ans.append(Solution.from_path(folder))
-            except (FileNotFoundError, NotADirectoryError) as e:
+            except (FileNotFoundError, NotADirectoryError):
                 continue
         return ans
 
@@ -36,6 +35,7 @@ class SolutionRepository:
     def get_detail(self, solution_name: str) -> SolutionDetail:
         return SolutionDetail.from_name(solution_name)
 
+    @cache
     def get_total(
         self, solution: str, component: str, scenario: Optional[str] = None
     ) -> DataResult:
@@ -46,9 +46,8 @@ class SolutionRepository:
             total: pd.DataFrame | pd.Series = results.get_total(
                 component, scenario_name=scenario
             )
-        except KeyError as e:
+        except KeyError:
             raise HTTPException(status_code=404, detail=f"{component} not found!")
-
 
         if type(total) is not pd.Series:
             total = total.loc[~(total == 0).all(axis=1)]
@@ -66,7 +65,7 @@ class SolutionRepository:
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
             unit = str(unit.to_csv())
-        except Exception as e:
+        except Exception:
             unit = None
         return unit
 
