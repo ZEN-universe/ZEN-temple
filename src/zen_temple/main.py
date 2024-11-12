@@ -37,7 +37,7 @@ app.add_middleware(
 app.mount("/api", apiapp)
 
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
-app.mount("/", StaticFiles(directory=explorer_path, html=True), name="explorer")
+app.mount("/explorer", StaticFiles(directory=explorer_path, html=True), name="explorer")
 config = uvicorn.Config("main:app", port=8000, log_level="info")
 server = uvicorn.Server(config)
 
