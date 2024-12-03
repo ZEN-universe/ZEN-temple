@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zen_temple"
-version = "0.1.11"
+version = "0.1.12"
 authors = [
   { name="Vinzenz Muser", email="muserv@ethz.ch" },
 ]
