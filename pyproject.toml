@@ -22,8 +22,6 @@ dependencies = [
     "fastapi",
     "fastapi-cache2",
     "python-dotenv",
-    "sqlmodel",
-    "python-multipart",
     "zen-garden"
 ]
 
@@ -36,3 +34,16 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 zen_temple = ["explorer/*", "explorer/**/*"]
+
+[tool.ruff]
+line-length = 90
+extend-select = ["I"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "Q", "I"]
+ignore = ["E203", "E501"]
+
+[tool.mypy]
+mypy_path = "mypy"
+strict = "true"
+files = ["./src/"]

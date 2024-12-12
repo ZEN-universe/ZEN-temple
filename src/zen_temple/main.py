@@ -1,30 +1,15 @@
-from .routers import solutions
-from collections.abc import AsyncIterator
+import os
+import webbrowser
 
 import uvicorn
-
-from contextlib import asynccontextmanager
-
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.inmemory import InMemoryBackend
-import webbrowser
-import os
+from .routers import solutions
 
-
-@asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    FastAPICache.init(InMemoryBackend())
-    yield
-
-
-app = FastAPI(lifespan=lifespan)
-
-apiapp = FastAPI()
-apiapp.include_router(solutions.router)
+# Initialize default app
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,10 +19,18 @@ app.add_middleware(
     allow_headers=["*"],  # type: ignore
 )
 
-app.mount("/api", apiapp)
-
+# Mount explorer as static files
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
-app.mount("/explorer", StaticFiles(directory=explorer_path, html=True), name="explorer")
+explorer_url = "/explorer"
+app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True),
+ name="explorer")
+
+# Initialize api app
+api_app = FastAPI()
+api_app.include_router(solutions.router)
+app.mount("/api", api_app)
+
+# Define uvicorn settings
 config = uvicorn.Config("main:app", port=8000, log_level="info")
 server = uvicorn.Server(config)
 

@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,7 +10,7 @@ class Config:
         self.SOLUTION_FOLDER: str = os.getenv("SOLUTION_FOLDER")  # type: ignore
 
         if self.SOLUTION_FOLDER is None:
-            self.SOLUTION_FOLDER = "../outputs"
+            self.SOLUTION_FOLDER = "./outputs"
 
         self.check()
 
