@@ -19,15 +19,16 @@ app.add_middleware(
     allow_headers=["*"],  # type: ignore
 )
 
-# Mount explorer as static files
-explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
-explorer_url = "/"
-app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
 
 # Initialize api app
 api_app = FastAPI()
 api_app.include_router(solutions.router)
 app.mount("/api", api_app)
+
+# Mount explorer as static files
+explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
+explorer_url = "/"
+app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
 
 # Define uvicorn settings
 config = uvicorn.Config("main:app", port=8000, log_level="info")
