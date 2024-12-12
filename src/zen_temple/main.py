@@ -21,9 +21,8 @@ app.add_middleware(
 
 # Mount explorer as static files
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
-explorer_url = "/explorer"
-app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True),
- name="explorer")
+explorer_url = "/"
+app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
 
 # Initialize api app
 api_app = FastAPI()
