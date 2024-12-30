@@ -37,9 +37,7 @@ async def get_total(
 
 
 @router.get("/get_unit/{solution_name}/{variable_name}")
-async def get_unit(
-    solution_name: str, variable_name: str, scenario: Optional[str] = None
-) -> Optional[str]:
+async def get_unit(solution_name: str, variable_name: str) -> Optional[str]:
     """
     Get the unit of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
@@ -56,7 +54,7 @@ async def get_energy_balance(
     year: Optional[int] = 0,
 ) -> dict[str, str]:
     """
-    Get the energy balance of a secific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
+    Get the energy balance of a specific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
     If no scenario and/or year is provided, the first one is taken.
     """
     ans = solution_repository.get_energy_balance(
