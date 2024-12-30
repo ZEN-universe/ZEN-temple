@@ -10,13 +10,13 @@ from zen_garden.postprocess.results import Results  # type: ignore
 from ..config import config
 from ..models.solution import (
     DataResult,
-    Solution,
     SolutionDetail,
+    SolutionList,
 )
 
 
 class SolutionRepository:
-    def get_list(self) -> list[Solution]:
+    def get_list(self) -> list[SolutionList]:
         """
         Creates a list of Solution-objects of all solutions that are contained in any folder contained in the configured SOLUTION_FOLDER.
 
@@ -31,7 +31,7 @@ class SolutionRepository:
 
         for folder in solutions_folders:
             try:
-                ans.append(Solution.from_path(folder))
+                ans.append(SolutionList.from_path(folder))
             except (FileNotFoundError, NotADirectoryError):
                 continue
         return ans

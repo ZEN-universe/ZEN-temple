@@ -2,14 +2,14 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from ..models.solution import DataResult, Solution, SolutionDetail
+from ..models.solution import DataResult, SolutionDetail, SolutionList
 from ..repositories.solution_repository import solution_repository
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
 
 
 @router.get("/list")
-async def get_list() -> list[Solution]:
+async def get_list() -> list[SolutionList]:
     """
     Get a list of the available solutions.
     """

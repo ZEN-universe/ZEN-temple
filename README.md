@@ -12,7 +12,7 @@ The folder and file structure is the following:
 
 
 ### Models
-`models` contains the Pydantic-models that are used for the documetnation. Some of these models also include generators that create an instance of the model given the path of a solution.
+`models` contains the Pydantic-models that are used for the documetnation. Some of these models also include generators that create an instance of the model given the path of a solution. See https://fastapi.tiangolo.com/tutorial/body/#create-your-data-model
 
 ### Repositories
 `repositories` contains the repositories for the data access. These provide an abstraction layer for the routers such that the data access is separtated from the data source. Arguably, the generators defined in the models should be part of the repository in order to separate the instanciation of the models from the way that the solutions are stored. For more information visit https://www.umlboard.com/design-patterns/repository.html

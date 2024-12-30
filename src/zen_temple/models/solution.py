@@ -11,6 +11,10 @@ from ..config import config
 
 
 class ScenarioDetail(BaseModel):
+    """
+    ScenarioDetail is the model that includes all the detail information of a scenario. It also contains the System-information from ZEN Garden.
+    """
+
     system: System
     reference_carrier: dict[str, str]
     carriers_import: list[str]
@@ -22,6 +26,10 @@ class ScenarioDetail(BaseModel):
 
 
 class SolutionDetail(BaseModel):
+    """
+    SolutionDetail is the model that includes all the detail information of a solution. This includes the ScenarioDetail for all scenarios of a solution.
+    """
+
     name: str
     folder_name: str
     scenarios: dict[str, ScenarioDetail]
@@ -29,6 +37,12 @@ class SolutionDetail(BaseModel):
 
     @staticmethod
     def from_path(path: str) -> "SolutionDetail":
+        """
+        Generator that instanciates a SolutionDetail given the path of a solution.
+        It creates a Solution-instance of ZEN Gardens soluion class and extracts the necessary dataframes from this soultion.
+
+        :param path: Path to the results folder.
+        """
         name = os.path.split(path)[-1]
         relative_path = os.path.relpath(path, start=config.SOLUTION_FOLDER)
         results = Results(path)
@@ -95,12 +109,11 @@ class SolutionDetail(BaseModel):
         )
 
 
-class Scenario(BaseModel):
-    name: str
-    sub_folder: str
+class SolutionList(BaseModel):
+    """
+    SolutionList defines the model of the data that is included in the solutions list endpoint.
+    """
 
-
-class Solution(BaseModel):
     folder_name: str
     name: str
     nodes: list[str] = Field(default=[])
@@ -111,7 +124,12 @@ class Solution(BaseModel):
     scenarios: list[str] = Field(default=[])
 
     @staticmethod
-    def from_path(path: str) -> "Solution":
+    def from_path(path: str) -> "SolutionList":
+        """
+        Generator method to instantiate a SolutionList ins given the path of a solution.
+
+        :param path: Path to the results folder.
+        """
         with open(os.path.join(path, "scenarios.json"), "r") as f:
             scenarios_json: dict[str, Any] = json.load(f)
 
@@ -142,11 +160,15 @@ class Solution(BaseModel):
 
         scenario_path = Path(path).relative_to(config.SOLUTION_FOLDER)
         system["name"] = ".".join(scenario_path.parts)
-        solution = Solution(**system)
+        solution = SolutionList(**system)
 
         return solution
 
 
 class DataResult(BaseModel):
+    """
+    DataResult defines the default model that is used to return the CSV string of a dataframe.
+    """
+
     data_csv: str
     unit: Optional[str]
