@@ -72,7 +72,7 @@ class SolutionRepository:
             raise HTTPException(status_code=404, detail=f"{component} not found!")
 
         if type(total) is not pd.Series:
-            total = total.loc[~(total == 0).all(axis=1)]  # type: ignore
+            total = total.loc[~(total == 0).all(axis=1)]
 
         return DataResult(data_csv=str(total.to_csv()), unit=unit)
 
