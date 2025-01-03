@@ -33,6 +33,7 @@ class SolutionDetail(BaseModel):
     name: str
     folder_name: str
     scenarios: dict[str, ScenarioDetail]
+    components: list[str]
     version: str
 
     @staticmethod
@@ -105,6 +106,7 @@ class SolutionDetail(BaseModel):
             name=name,
             folder_name=str(relative_path),
             scenarios=scenario_details,
+            components=results.solution_loader.components.keys(),
             version=version,
         )
 
