@@ -36,6 +36,20 @@ async def get_total(
     return ans
 
 
+@router.get("/get_full_ts/{solution_name}/{variable_name}")
+async def get_full_ts(
+    solution_name: str,
+    variable_name: str,
+    scenario: Optional[str] = None,
+    year: Optional[int] = None,
+) -> DataResult:
+    """
+    Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
+    """
+    ans = solution_repository.get_full_ts(solution_name, variable_name, scenario, year)
+    return ans
+
+
 @router.get("/get_unit/{solution_name}/{variable_name}")
 async def get_unit(solution_name: str, variable_name: str) -> Optional[str]:
     """

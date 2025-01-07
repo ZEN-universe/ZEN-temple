@@ -51,6 +51,35 @@ class SolutionRepository:
         return SolutionDetail.from_path(path)
 
     @cache
+    def get_full_ts(
+        self,
+        solution_name: str,
+        component: str,
+        scenario: Optional[str] = None,
+        year: Optional[int] = None,
+    ) -> DataResult:
+        """
+        Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
+
+        :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
+        :param component: Name of the component.
+        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
+        :param year: The year of the ts. If skipped, the first year is taken.
+        """
+        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        unit = self.get_unit(solution_name, component)
+        results = Results(solution_folder)
+
+        if year is None:
+            year = 0
+
+        full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+        full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
+        full_ts = full_ts.loc[~(full_ts == 0).all(axis=1)]
+
+        return DataResult(data_csv=str(full_ts.to_csv()), unit=unit)
+
+    @cache
     def get_total(
         self, solution_name: str, component: str, scenario: Optional[str] = None
     ) -> DataResult:
