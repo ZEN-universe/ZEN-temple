@@ -6,7 +6,7 @@ from typing import Any, Optional
 import pandas as pd
 from fastapi import HTTPException
 from zen_garden.postprocess.results import Results  # type: ignore
-
+from time import perf_counter
 from ..config import config
 from ..models.solution import (
     DataResult,
@@ -121,12 +121,14 @@ class SolutionRepository:
         if year is None:
             year = 0
 
-        energy_balance: dict[str, pd.DataFrame | pd.Series[Any]] = (
+        balances: dict[str, pd.DataFrame | pd.Series[Any]] = (
             results.get_energy_balance_dataframes(node, carrier, year, scenario)
         )
 
         # Drop duplicates of all dataframes
-        balances = {key: val.drop_duplicates() for key, val in energy_balance.items()}
+        balances = {
+            key: val[~val.index.duplicated(keep="first")] for key, val in balances.items()
+        }
 
         # Drop variables that only contain zeros (except for demand)
         for key, series in balances.items():
