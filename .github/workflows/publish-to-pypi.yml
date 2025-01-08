@@ -18,7 +18,7 @@ jobs:
           OLD_VERSION="\"$OLD_VERSION\""
           echo $OLD_VERSION
           TAG_NAME=${{ github.ref_name }}
-          NEW_VERSION="${TAG_NAME:1}"
+          NEW_VERSION="\"${TAG_NAME:1}\""
           echo $NEW_VERSION
           sed -i "s+version = $OLD_VERSION+version = $NEW_VERSION+g" pyproject.toml
       - name: Commit Changes
