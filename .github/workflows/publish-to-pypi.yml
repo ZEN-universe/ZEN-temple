@@ -16,6 +16,7 @@ jobs:
         run: |
           OLD_VERSION=$(grep ^version pyproject.toml | cut -d '"' -f 2)
           OLD_VERSION="\"$OLD_VERSION\""
+          echo $OLD_VERSION
           TAG_NAME=${{ github.ref_name }}
           NEW_VERSION="${TAG_NAME:1}"
           echo $NEW_VERSION
