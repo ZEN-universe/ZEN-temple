@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from zen_garden.model.default_config import System  # type: ignore
 from zen_garden.postprocess.results import Results  # type: ignore
 
+from zen_temple.utils import get_variable_name
+
 from ..config import config
 
 
@@ -47,7 +49,11 @@ class SolutionDetail(BaseModel):
         name = os.path.split(path)[-1]
         relative_path = os.path.relpath(path, start=config.SOLUTION_FOLDER)
         results = Results(path)
-        reference_carriers = results.get_df("set_reference_carriers")
+        results_version = results.get_analysis().zen_garden_version
+
+        reference_carriers = results.get_df(
+            get_variable_name("set_reference_carriers", results_version)
+        )
 
         scenario_details = {}
 
@@ -55,13 +61,30 @@ class SolutionDetail(BaseModel):
             system = scenario.system
             reference_carrier = reference_carriers[scenario_name].to_dict()
 
-            df_import = results.get_df("availability_import")[scenario_name]
-            df_export = results.get_df("availability_export")[scenario_name]
-            df_demand = results.get_df("demand")[scenario_name]
-            df_input_carriers = results.get_df("set_input_carriers")[scenario_name]
-            df_output_carriers = results.get_df("set_output_carriers")[scenario_name]
+            df_import = results.get_df(
+                get_variable_name("availability_import", results_version)
+            )[scenario_name]
 
-            edges = results.get_df("set_nodes_on_edges")[scenario_name]
+            df_export = results.get_df(
+                get_variable_name("availability_export", results_version)
+            )[scenario_name]
+
+            df_demand = results.get_df(get_variable_name("demand", results_version))[
+                scenario_name
+            ]
+
+            df_input_carriers = results.get_df(
+                get_variable_name("set_input_carriers", results_version)
+            )[scenario_name]
+
+            df_output_carriers = results.get_df(
+                get_variable_name("set_output_carriers", results_version)
+            )[scenario_name]
+
+            edges = results.get_df(
+                get_variable_name("set_nodes_on_edges", results_version)
+            )[scenario_name]
+
             edges_dict = edges.to_dict()
             carriers_input_dict = {
                 key: val.split(",") for key, val in df_input_carriers.to_dict().items()
@@ -99,9 +122,11 @@ class SolutionDetail(BaseModel):
                 carriers_demand=carriers_demand,
                 edges=edges_dict,
             )
+
         version = results.get_analysis().zen_garden_version
         if version is None:
             version = "0.0.0"
+
         return SolutionDetail(
             name=name,
             folder_name=str(relative_path),

@@ -6,7 +6,8 @@ from typing import Any, Optional
 import pandas as pd
 from fastapi import HTTPException
 from zen_garden.postprocess.results import Results  # type: ignore
-from time import perf_counter
+from zen_temple.utils import get_variable_name
+
 from ..config import config
 from ..models.solution import (
     DataResult,
@@ -101,7 +102,7 @@ class SolutionRepository:
             raise HTTPException(status_code=404, detail=f"{component} not found!")
 
         if type(total) is not pd.Series:
-            total = total.loc[~(total == 0).all(axis=1)]
+            total = total.loc[~(total == 0).all(axis=1)]  # type: ignore
 
         return DataResult(data_csv=str(total.to_csv()), unit=unit)
 
@@ -161,7 +162,10 @@ class SolutionRepository:
 
         # Drop variables that only contain zeros (except for demand)
         for key, series in balances.items():
-            if key == "demand":
+            demand_name = get_variable_name(
+                "demand", results.get_analysis().zen_garden_version
+            )
+            if key == demand_name:
                 continue
 
             if type(series) is not pd.Series:
