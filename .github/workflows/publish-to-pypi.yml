@@ -27,7 +27,6 @@ jobs:
         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
         git commit -a -m "Update version number to new version"
         git push origin HEAD:main
-    - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
