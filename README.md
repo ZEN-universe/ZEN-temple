@@ -30,4 +30,4 @@ The folder and file structure is the following:
 
 ## Releasing
 
-In order to release a new version to Pypi you have to create a new tag in the correct semantic versioning form (i.e. 'v[0-9]+.[0-9]+.[0-9]+'). Whenever such a tag is created, a new release is generated, the pyproject.toml file is updated and a new version is being published to Pypi.
+In order to release a new version to Pypi you have to create a new tag in the correct semantic versioning form (i.e. `v[0-9]+.[0-9]+.[0-9]+`). Whenever such a tag is created, a new release is generated, the pyproject.toml file is updated and a new version is being published to Pypi.
