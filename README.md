@@ -2,6 +2,8 @@
 
 ZEN Temple is a FastAPI Application. After installing it with `pip install -e .`, you can start the application with  `uvicorn src.main:app --reload`.
 
+## Folder structure
+
 The folder and file structure is the following:
 
 ### Explorer
@@ -25,3 +27,7 @@ The folder and file structure is the following:
 
 ### Main
 `main.py` contains the setup of the FastAPI application. For more information visit https://fastapi.tiangolo.com/tutorial/bigger-applications/
+
+## Releasing
+
+In order to release a new version to Pypi you have to create a new tag in the correct semantic versioning form (i.e. "v*.*.*"). Whenever such a tag is created, a new release is generated, the pyproject.toml file is updated and a new version is being published to Pypi.
