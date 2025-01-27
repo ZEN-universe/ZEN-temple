@@ -6,6 +6,7 @@ from typing import Any, Optional
 import pandas as pd
 from fastapi import HTTPException
 from zen_garden.postprocess.results import Results  # type: ignore
+
 from zen_temple.utils import get_variable_name
 
 from ..config import config
@@ -78,7 +79,7 @@ class SolutionRepository:
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
         full_ts = full_ts.loc[~(full_ts == 0).all(axis=1)]
 
-        return DataResult(data_csv=str(full_ts.to_csv()), unit=unit)
+        return DataResult(data_csv=str(full_ts.to_csv(lineterminator="\n")), unit=unit)
 
     @cache
     def get_total(
@@ -104,7 +105,7 @@ class SolutionRepository:
         if type(total) is not pd.Series:
             total = total.loc[~(total == 0).all(axis=1)]  # type: ignore
 
-        return DataResult(data_csv=str(total.to_csv()), unit=unit)
+        return DataResult(data_csv=str(total.to_csv(lineterminator="\n")), unit=unit)
 
     def get_unit(self, solution_name: str, component: str) -> Optional[str]:
         """
@@ -120,7 +121,7 @@ class SolutionRepository:
             unit: str | pd.DataFrame = results.get_unit(component)
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
-            unit_str = str(unit.to_csv())  # type: ignore
+            unit_str = str(unit.to_csv(lineterminator="\n"))  # type: ignore
 
         except Exception:
             unit_str = None
@@ -171,7 +172,7 @@ class SolutionRepository:
             if type(series) is not pd.Series:
                 balances[key] = series.loc[~(series == 0).all(axis=1)]  # type: ignore
 
-        ans = {key: val.to_csv() for key, val in balances.items()}
+        ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
 
         return ans
 
