@@ -42,11 +42,14 @@ async def get_full_ts(
     variable_name: str,
     scenario: Optional[str] = None,
     year: Optional[int] = None,
+    rolling_average_size: int = 1,
 ) -> DataResult:
     """
     Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
-    ans = solution_repository.get_full_ts(solution_name, variable_name, scenario, year)
+    ans = solution_repository.get_full_ts(
+        solution_name, variable_name, scenario, year, rolling_average_size
+    )
     return ans
 
 
@@ -66,12 +69,13 @@ async def get_energy_balance(
     carrier_name: str,
     scenario: Optional[str] = None,
     year: Optional[int] = 0,
+    rolling_average_size: int = 1,
 ) -> dict[str, str]:
     """
     Get the energy balance of a specific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
     If no scenario and/or year is provided, the first one is taken.
     """
     ans = solution_repository.get_energy_balance(
-        solution_name, node_name, carrier_name, scenario, year
+        solution_name, node_name, carrier_name, scenario, year, rolling_average_size
     )
     return ans

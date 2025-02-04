@@ -59,6 +59,7 @@ class SolutionRepository:
         component: str,
         scenario: Optional[str] = None,
         year: Optional[int] = None,
+        rolling_average_window_size: int = 1,
     ) -> DataResult:
         """
         Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
@@ -78,6 +79,9 @@ class SolutionRepository:
         full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
         full_ts = full_ts.loc[~(full_ts == 0).all(axis=1)]
+
+        if rolling_average_window_size > 1:
+            full_ts = full_ts.rolling(rolling_average_window_size, axis=1).mean()
 
         return DataResult(data_csv=str(full_ts.to_csv(lineterminator="\n")), unit=unit)
 
@@ -135,6 +139,7 @@ class SolutionRepository:
         carrier: str,
         scenario: Optional[str] = None,
         year: Optional[int] = None,
+        rolling_average_window_size: int = 1,
     ) -> dict[str, str]:
         """
         Returns the energy balance dataframes of a solution.
@@ -145,6 +150,7 @@ class SolutionRepository:
         :param carrier: The name of the carrier.
         :param scenario: The name of the scenario. If skipped, the first scenario is taken.
         :param year: The desired year. If skipped, the first year is taken.
+        :param rolling_average_window_size: Size of the rolling average window.
         """
         solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         results = Results(solution_folder)
@@ -166,11 +172,14 @@ class SolutionRepository:
             demand_name = get_variable_name(
                 "demand", results.get_analysis().zen_garden_version
             )
-            if key == demand_name:
-                continue
 
-            if type(series) is not pd.Series:
+            if type(series) is not pd.Series and key != demand_name:
                 balances[key] = series.loc[~(series == 0).all(axis=1)]  # type: ignore
+
+            if rolling_average_window_size > 1:
+                balances[key] = (
+                    balances[key].rolling(rolling_average_window_size, axis=1).mean()
+                )
 
         ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
 
