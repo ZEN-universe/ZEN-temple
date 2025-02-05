@@ -1,6 +1,6 @@
 # ZEN Temple
 
-ZEN Temple is a FastAPI Application. After installing it with `pip install -e .`, you can start the application with  `uvicorn src.main:app --reload`.
+ZEN Temple is a FastAPI Application. After installing it with `pip install -e .`, you can start the application with  `uvicorn src.zen_temple.main:app --reload`.
 
 ## Folder structure
 
