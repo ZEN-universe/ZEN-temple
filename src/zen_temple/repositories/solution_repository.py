@@ -177,9 +177,29 @@ class SolutionRepository:
                 balances[key] = series.loc[~(series == 0).all(axis=1)]  # type: ignore
 
             if rolling_average_window_size > 1:
-                balances[key] = (
-                    balances[key].rolling(rolling_average_window_size, axis=1).mean()
+                current_col = balances[key]
+
+                if current_col.shape[0] == 0:
+                    continue
+
+                # Append end of df to beginning
+                current_col = current_col[
+                    current_col.columns[-rolling_average_window_size:].to_list()
+                    + current_col.columns.to_list()
+                ]
+
+                # Rename columns for propper rolling
+                current_col.columns = range(current_col.shape[1])
+
+                current_col = current_col.T
+                current_col = (
+                    current_col.rolling(rolling_average_window_size).mean().dropna().T
                 )
+
+                # Rename columns again so it starts at 0
+                current_col.columns = range(current_col.shape[1])
+
+                balances[key] = current_col
 
         ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
 
