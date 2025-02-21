@@ -16,3 +16,5 @@ garden
 
 dist
 uv.lock
+
+build/
