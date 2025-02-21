@@ -1,18 +1,27 @@
+# Python files
 venv
 .venv
 *.egg-info
 uploads
-__pycache__
+__pycache__/
+dist
+uv.lock
+
+# Environment variables
 .env
 
 public/*
 !public/.keep
 
+# IDE files
 .vscode
 .idea 
 
+# ZEN garden folders
 outputs
 garden
 
-dist
-uv.lock
+# Exclude the explorer folder from the root of the project
+# It is imported during the build process run upon release
+src/zen_temple/explorer/*
+!src/zen_temple/explorer/index.html

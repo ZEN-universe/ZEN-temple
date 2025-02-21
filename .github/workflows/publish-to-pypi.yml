@@ -1,57 +1,92 @@
 name: Publish Python 🐍 distribution 📦 to PyPI
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+  release:
+    types: [published]
+
 jobs:
-  build:
+  build-zen-explorer:
+    name: Build Zen Explorer 🕵️
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ZEN-universe/ZEN-explorer
+          ref: main
+          
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18.x"
+
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build Zen Explorer 🕵️
+        run: npm run build
+
+      - name: Store the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: zen-explorer-build
+          path: build/
+
+  build-python-package:
     name: Build distribution 📦
     runs-on: ubuntu-latest
-    #if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes^
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      with:
-        fetch-depth: 0
-    - name: Update Version Number
-      run: |
-        OLD_VERSION=$(grep ^version pyproject.toml | cut -d '"' -f 2)
-        OLD_VERSION="\"$OLD_VERSION\""
-        echo $OLD_VERSION
-        TAG_NAME=${{ github.ref_name }}
-        NEW_VERSION="\"${TAG_NAME:1}\""
-        echo $NEW_VERSION
-        sed -i "s+version = $OLD_VERSION+version = $NEW_VERSION+g" pyproject.toml
-    - name: Commit Changes
-      run: |
-        git config user.name "$GITHUB_ACTOR"
-        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-        git commit -a -m "Update version number to new version"
-        git push origin HEAD:main
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
-      run: python3 -m build
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    #if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
     needs:
-    - build
+      - build-zen-explorer
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Update Version Number
+        run: |
+          OLD_VERSION=$(grep ^version pyproject.toml | cut -d '"' -f 2)
+          OLD_VERSION="\"$OLD_VERSION\""
+          echo "Old version: $OLD_VERSION"
+          NEW_VERSION="\"${GITHUB_REF:1}\""
+          echo "New version: $NEW_VERSION"
+          sed -i "s+version = $OLD_VERSION+version = $NEW_VERSION+g" pyproject.toml
+
+      - name: Commit Changes
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git commit -a -m "Update version number to new version"
+          git push origin HEAD:main
+
+      - name: Import ZEN explorer build
+        uses: actions/download-artifact@v4
+        with:
+          name: zen-explorer-build
+          path: src/zen_explorer/explorer/
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pypa/build
+        run: python3 -m pip install build --user
+
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-pypi:
+    name: Publish Python 🐍 distribution 📦 to PyPI
+    if: github.repository == 'ZEN-universe/ZEN-temple'
+    needs:
+      - build-python-package
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -59,10 +94,11 @@ jobs:
     permissions:
       id-token: write
     steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
