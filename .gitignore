@@ -25,3 +25,6 @@ garden
 # It is imported during the build process run upon release
 src/zen_temple/explorer/*
 !src/zen_temple/explorer/index.html
+
+# Exclude build folder
+build/
