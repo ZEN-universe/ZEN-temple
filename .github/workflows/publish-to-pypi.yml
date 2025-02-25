@@ -65,7 +65,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: zen-explorer-build
-          path: src/zen_explorer/explorer/
+          path: src/zen_temple/explorer/
 
       - name: Set up Python
         uses: actions/setup-python@v5
