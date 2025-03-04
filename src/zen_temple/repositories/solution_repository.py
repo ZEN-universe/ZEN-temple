@@ -77,6 +77,9 @@ class SolutionRepository:
             year = 0
 
         full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+        if full_ts.shape[0] == 0:
+            return DataResult(data_csv="", unit=unit)
+
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
         full_ts = full_ts.loc[~(full_ts == 0).all(axis=1)]
 
