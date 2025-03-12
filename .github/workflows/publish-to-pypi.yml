@@ -48,7 +48,7 @@ jobs:
           OLD_VERSION=$(grep ^version pyproject.toml | cut -d '"' -f 2)
           OLD_VERSION="\"$OLD_VERSION\""
           echo "Old version: $OLD_VERSION"
-          TAG_NAME=$(echo $GITHUB_REF | cut -d '/' -f 3)
+            TAG_NAME=$(echo $GITHUB_REF | cut -d '/' -f 3 | sed 's/^v//')
           NEW_VERSION="\"${TAG_NAME}\""
           echo "New version: $NEW_VERSION"
           sed -i "s+version = $OLD_VERSION+version = $NEW_VERSION+g" pyproject.toml
