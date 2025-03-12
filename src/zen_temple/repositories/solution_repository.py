@@ -81,7 +81,7 @@ class SolutionRepository:
             return DataResult(data_csv="", unit=unit)
 
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
-        full_ts = full_ts.loc[(full_ts != 0).any(axis=1)]
+        full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
 
         if rolling_average_window_size > 1:
             full_ts = full_ts.rolling(rolling_average_window_size, axis=1).mean()
@@ -110,7 +110,7 @@ class SolutionRepository:
             raise HTTPException(status_code=404, detail=f"{component} not found!")
 
         if type(total) is not pd.Series:
-            total = total.loc[(total != 0).any(axis=1)]
+            total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
 
         return DataResult(data_csv=str(total.to_csv(lineterminator="\n")), unit=unit)
 
@@ -177,7 +177,7 @@ class SolutionRepository:
             )
 
             if type(series) is not pd.Series and key != demand_name:
-                balances[key] = series.loc[(series != 0).any(axis=1)]
+                balances[key] = series.loc[(abs(series) > config.EPS * max(series)).any(axis=1)]
 
             if rolling_average_window_size > 1:
                 current_col = balances[key]
