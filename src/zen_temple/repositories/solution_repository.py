@@ -177,6 +177,8 @@ class SolutionRepository:
             )
 
             if type(series) is not pd.Series and key != demand_name:
+                if series.empty:
+                    continue
                 balances[key] = series.loc[(abs(series) > config.EPS * max(series)).any(axis=1)]
 
             if rolling_average_window_size > 1:
