@@ -50,40 +50,38 @@ class SolutionDetail(BaseModel):
         relative_path = os.path.relpath(path, start=config.SOLUTION_FOLDER)
         results = Results(path)
         results_version = results.get_analysis().zen_garden_version
-
-        reference_carriers = results.get_df(
-            get_variable_name("set_reference_carriers", results_version)
-        )
-
         scenario_details = {}
 
         for scenario_name, scenario in results.solution_loader.scenarios.items():
+            # TODO can we read this out when needed? E.g., when we actually look at demand or imports/exports? That would save a lot of time reading in the data
             system = scenario.system
-            reference_carrier = reference_carriers[scenario_name].to_dict()
+            reference_carriers = results.get_df(
+                get_variable_name("set_reference_carriers", results_version),scenario_name=scenario_name
+            ).to_dict()
 
             df_import = results.get_df(
-                get_variable_name("availability_import", results_version)
-            )[scenario_name]
+                get_variable_name("availability_import", results_version),scenario_name=scenario_name
+            )
 
             df_export = results.get_df(
-                get_variable_name("availability_export", results_version)
-            )[scenario_name]
+                get_variable_name("availability_export", results_version),scenario_name=scenario_name
+            )
 
-            df_demand = results.get_df(get_variable_name("demand", results_version))[
-                scenario_name
-            ]
+            df_demand = results.get_df(
+                get_variable_name("demand", results_version),scenario_name=scenario_name
+            )
 
             df_input_carriers = results.get_df(
-                get_variable_name("set_input_carriers", results_version)
-            )[scenario_name]
+                get_variable_name("set_input_carriers", results_version),scenario_name=scenario_name
+            )
 
             df_output_carriers = results.get_df(
-                get_variable_name("set_output_carriers", results_version)
-            )[scenario_name]
+                get_variable_name("set_output_carriers", results_version),scenario_name=scenario_name
+            )
 
             edges = results.get_df(
-                get_variable_name("set_nodes_on_edges", results_version)
-            )[scenario_name]
+                get_variable_name("set_nodes_on_edges", results_version),scenario_name=scenario_name
+            )
 
             edges_dict = edges.to_dict()
             carriers_input_dict = {
@@ -114,7 +112,7 @@ class SolutionDetail(BaseModel):
 
             scenario_details[scenario_name] = ScenarioDetail(
                 system=system,
-                reference_carrier=reference_carrier,
+                reference_carrier=reference_carriers,
                 carriers_import=carriers_import,
                 carriers_export=carriers_export,
                 carriers_input=carriers_input_dict,
@@ -164,11 +162,18 @@ class SolutionList(BaseModel):
 
         scenario_name = ""
 
+        # TODO I think this needs to be more flexible for the different scenario types -> if subscenarios exist or not
+        # TODO this is a quick fix for the current scenario structure
         if len(scenarios_json) > 1:
             first_scenario_name = scenarios[0]
-            scenario_name = (
-                "scenario_" + scenarios_json[first_scenario_name]["sub_folder"]
-            )
+            if scenarios_json[first_scenario_name]["sub_folder"] != "":
+                scenario_name = (
+                    "scenario_" + scenarios_json[first_scenario_name]["base_scenario"] + "/" + "scenario_" + scenarios_json[first_scenario_name]["sub_folder"]
+                )
+            else:
+                scenario_name = (
+                    "scenario_" + scenarios_json[first_scenario_name]["base_scenario"]
+                )
 
         with open(os.path.join(path, scenario_name, "system.json")) as f:
             system: dict[str, Any] = json.load(f)
@@ -180,6 +185,7 @@ class SolutionList(BaseModel):
 
         system["folder_name"] = relative_folder
 
+        # TODO this can change with the scenarios - it should be scenario dependent
         system["carriers"] = system["set_carriers"]
         system["technologies"] = system["set_technologies"]
         system["scenarios"] = scenarios

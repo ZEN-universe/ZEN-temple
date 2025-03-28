@@ -27,14 +27,17 @@ class SolutionRepository:
         """
         solutions_folders: set[str] = set()
         ans = []
-        for dirpath, _, filenames in walk(config.SOLUTION_FOLDER):
+        # TODO this is bad because if you accidently have a scenarios.json in a subscenario folder, it will be included in the list. Better check if parent folder is a solution (has scenarios.json)
+        for dirpath, dirnames, filenames in walk(config.SOLUTION_FOLDER):
             if "scenarios.json" in filenames:
                 solutions_folders.add(dirpath)
-
+                # Prevent os.walk from going deeper into this folder
+                dirnames.clear()
         for folder in solutions_folders:
             try:
                 ans.append(SolutionList.from_path(folder))
-            except (FileNotFoundError, NotADirectoryError):
+            except (FileNotFoundError, NotADirectoryError) as e:
+                print(e + f" - Skip {folder}")
                 continue
         return ans
 
@@ -130,7 +133,8 @@ class SolutionRepository:
                 unit = pd.DataFrame({0: [unit]})
             unit_str = str(unit.to_csv(lineterminator="\n"))  # type: ignore
 
-        except Exception:
+        except Exception as e:
+            print(e)
             unit_str = None
         return unit_str
 
