@@ -28,6 +28,21 @@ conda activate <your-env-name>
 uvicorn src.zen_temple.main:app --reload
 ```
 
+## Release workflow
+
+To create a new release of ZEN-temple follow the following steps. The idea is that for each major release (from `v0.4.x` to `v0.5.0`) we sync the version number of ZEN explorer and ZEN temple
+
+1. Bump version in ZEN explorer `bash scripts/bump_version.sh` and update its CHANGELOG.md.
+2. Commit and upload the updated files to GitHub.
+3. Create a new release for ZEN explorer:
+https://github.com/ZEN-universe/ZEN-explorer/releases/new
+4. Bump version in ZEN temple `bash scripts/bump_version.sh` and update [CHANGELOG.md](CHANGELOG.md).
+5. Commit and upload the updated files to GitHub.
+6. Create a new release for ZEN temple, e.g. `<version>`. For a pre-release also add a suffix `.dev1`, i.e. `<version>.dev1`, and mark the release as pre-release:
+https://github.com/ZEN-universe/ZEN-temple/releases/new
+7. (optional) Look at PyPI whether the new release has successfully been created:
+https://pypi.org/project/zen-temple/#history
+
 ## Folder structure
 
 The folder and file structure is the following:
