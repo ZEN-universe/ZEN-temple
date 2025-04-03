@@ -1,5 +1,12 @@
 ## Changelog
 
+## 0.4.3 (2025-04-03)
+
+- Fix "years stay on x-axis".
+- Fix scaleY labels that did not update.
+- Load data for storage data all in parallel.
+- Show correct unit.
+
 ## 0.4.2 (2025-04-02)
 
 - Fix some errors regarding scenarios and simplify scenario settings such as carriers etc.
