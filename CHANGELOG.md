@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.5.0 (2025-05-01)
+
+- Update ZEN Explorer to v0.5.0.
+
 ## 0.4.3 (2025-04-03)
 
 - Fix "years stay on x-axis".
