@@ -32,7 +32,14 @@ explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
 explorer_url = "/"
 app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
 
-def start_server(solution_folder: str, port: int, app_name: str | None = None, api_url: str | None = None, reload: bool = False):
+def start_server(
+    solution_folder: str,
+    port: int,
+    app_name: str | None = None,
+    api_url: str | None = None,
+    reload: bool = False,
+    no_open_browser: bool = False
+) -> None:
     if api_url is None:
         api_url = f"http://127.0.0.1:{port}/api/"
     if app_name is None:
@@ -48,9 +55,10 @@ def start_server(solution_folder: str, port: int, app_name: str | None = None, a
     print("Starting server...")
     uvicorn_config = uvicorn.Config("src.zen_temple.main:app", port=port, log_level="info", reload=reload)
     server = uvicorn.Server(uvicorn_config)
-
-    webbrowser.open(f"http://localhost:{port}/", new=2)
     server.run()
+
+    if not no_open_browser:
+        webbrowser.open(f"http://localhost:{port}/", new=2)
 
 def parse_arguments_and_run():
     args = ArgumentParser(description="ZEN Temple - Visualization web platform for ZEN Garden")
@@ -63,9 +71,17 @@ def parse_arguments_and_run():
     group.add_argument("--app-name", required=False, type=str, default="", help="set the name of the app")
     group.add_argument("--api-url", required=False, type=str, default=None, help="set URL to the API to fetch the data from")
     group.add_argument("--reload", required=False, action="store_true", help="enable reload for development purposes")
+    group.add_argument("--no-open-browser", required=False, action="store_false", help="do not open the browser automatically")
     args = args.parse_args()
     
-    start_server(args.solution_folder, args.port, args.app_name, args.api_url, args.reload)
+    start_server(
+        args.outputs_folder,
+        args.port,
+        app_name=args.app_name,
+        api_url=args.api_url,
+        reload=args.reload,
+        no_open_browser=args.no_open_browser
+    )
 
 if __name__ == "__main__":
     parse_arguments_and_run()
