@@ -57,11 +57,11 @@ def parse_arguments_and_run():
     
     group = args.add_argument_group("Server Options")
     group.add_argument("-p", "--port", required=False, type=int, default=8000, help="specify port to run the server on")
-    group.add_argument("--solution_folder", required=False, type=str, default="./outputs", help="specify path to the solution folder [default=./output]")
+    group.add_argument("-o", "--outputs-folder", required=False, type=str, default="./outputs", help="specify path to the solution folder [default=./output]")
     
     group = args.add_argument_group("Developer Options")
-    group.add_argument("--app_name", required=False, type=str, default="", help="set the name of the app")
-    group.add_argument("--api_url", required=False, type=str, default=None, help="set URL to the API to fetch the data from")
+    group.add_argument("--app-name", required=False, type=str, default="", help="set the name of the app")
+    group.add_argument("--api-url", required=False, type=str, default=None, help="set URL to the API to fetch the data from")
     group.add_argument("--reload", required=False, action="store_true", help="enable reload for development purposes")
     args = args.parse_args()
     
