@@ -30,7 +30,10 @@ app.mount("/api", api_app)
 # Mount explorer as static files
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
 explorer_url = "/"
-app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
+app.mount(
+    explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer"
+)
+
 
 def start_server(
     solution_folder: str,
@@ -38,7 +41,7 @@ def start_server(
     app_name: str | None = None,
     api_url: str | None = None,
     reload: bool = False,
-    no_open_browser: bool = False
+    no_open_browser: bool = False,
 ) -> None:
     if api_url is None:
         api_url = f"http://127.0.0.1:{port}/api/"
@@ -46,42 +49,109 @@ def start_server(
         app_name = ""
 
     config.SOLUTIONS_FOLDER = solution_folder
-    
+
     env_file = Path(__file__).parent / "explorer" / "_app" / "env.js"
-    with open(env_file, 'w') as file:
-        file.write(f'export const env={{"PUBLIC_TEMPLE_URL":"{api_url}", "PUBLIC_APP_NAME":"{app_name}"}}')
+    with open(env_file, "w") as file:
+        file.write(
+            f'export const env={{"PUBLIC_TEMPLE_URL":"{api_url}", "PUBLIC_APP_NAME":"{app_name}"}}'
+        )
 
     # Define uvicorn settings
-    print("Starting server...")
-    uvicorn_config = uvicorn.Config("src.zen_temple.main:app", port=port, log_level="info", reload=reload)
+    uvicorn_config = uvicorn.Config(
+        "src.zen_temple.main:app", port=port, log_level="info", reload=reload
+    )
     server = uvicorn.Server(uvicorn_config)
-    server.run()
-
     if not no_open_browser:
         webbrowser.open(f"http://localhost:{port}/", new=2)
+    server.run()
+
+
+def find_outputs_folder(outputs_folder: str | None) -> None:
+    """
+    Verify if the outputs folder exists. Otherwise, goes through a list of default paths.
+    If none of the default paths exist, it raises an error.
+    """
+    outputs_path = None
+    if outputs_folder is not None:
+        outputs_path = Path(outputs_folder)
+    if outputs_path is None or not outputs_path.exists():
+        outputs_path = Path.cwd() / "outputs"
+    if not outputs_path.exists():
+        outputs_path = Path.cwd()
+
+    # Check if the outputs folder contains a scenarios.json file, i.e. that it is a valid outputs folder
+    scenario_files = outputs_path.glob("**/scenarios.json")
+    if not any(scenario_files):
+        raise FileNotFoundError(
+            f"No scenarios.json files found in the outputs folder: {outputs_path}. "
+            "Please provide a valid outputs folder using '-o <path-to-folder>'."
+        )
+    return str(outputs_path)
+
 
 def parse_arguments_and_run():
-    args = ArgumentParser(description="ZEN Temple - Visualization web platform for ZEN Garden")
-    
+    args = ArgumentParser(
+        description="ZEN Temple - Visualization web platform for ZEN Garden"
+    )
+
     group = args.add_argument_group("Server Options")
-    group.add_argument("-p", "--port", required=False, type=int, default=8000, help="specify port to run the server on")
-    group.add_argument("-o", "--outputs-folder", required=False, type=str, default="./outputs", help="specify path to the solution folder [default=./output]")
-    
+    group.add_argument(
+        "-p",
+        "--port",
+        required=False,
+        type=int,
+        default=8000,
+        help="port on which to run the local server",
+    )
+    group.add_argument(
+        "-o",
+        "--outputs-folder",
+        required=False,
+        type=str,
+        default=None,
+        help="path to your solutions folder. Per default looks for data in ./outputs or in the current working directory",
+    )
+
     group = args.add_argument_group("Developer Options")
-    group.add_argument("--app-name", required=False, type=str, default="", help="set the name of the app")
-    group.add_argument("--api-url", required=False, type=str, default=None, help="set URL to the API to fetch the data from")
-    group.add_argument("--reload", required=False, action="store_true", help="enable reload for development purposes")
-    group.add_argument("--no-open-browser", required=False, action="store_false", help="do not open the browser automatically")
+    group.add_argument(
+        "--app-name",
+        required=False,
+        type=str,
+        default="",
+        help="name of the app",
+    )
+    group.add_argument(
+        "--api-url",
+        required=False,
+        type=str,
+        default=None,
+        help="URL to the API to fetch the data from",
+    )
+    group.add_argument(
+        "--reload",
+        required=False,
+        action="store_true",
+        help="enable reload for development purposes",
+    )
+    group.add_argument(
+        "--no-open-browser",
+        required=False,
+        action="store_false",
+        help="do not open the browser automatically",
+    )
     args = args.parse_args()
-    
+
+    outputs_folder = find_outputs_folder(args.outputs_folder)
+
     start_server(
         args.outputs_folder,
         args.port,
         app_name=args.app_name,
         api_url=args.api_url,
         reload=args.reload,
-        no_open_browser=args.no_open_browser
+        no_open_browser=args.no_open_browser,
     )
+
 
 if __name__ == "__main__":
     parse_arguments_and_run()
