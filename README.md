@@ -10,7 +10,7 @@ Create a new conda environment, activate it, and install all dependencies:
 ```bash
 conda create --name <your-env-name> python==3.12
 conda activate <your-env-name>
-pip install -e .
+pip install -e .[mypy]
 ```
 
 Then, create a new copy of `.env`.
@@ -27,7 +27,7 @@ Activate your conda environment and run the application with this command:
 
 ```bash
 conda activate <your-env-name>
-uvicorn zen_temple.main:app --reload
+python -m zen_temple.main --reload
 ```
 
 ## Release workflow

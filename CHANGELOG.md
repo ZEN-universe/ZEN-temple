@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.6.0 (2025-05-27)
+
+- Change folder structure for a flat layout by moving `src/zen_temple` to `zen_temple`.
+- Add script to automatically run `mypy` on every push to the server.
+
 ## 0.5.0 (2025-05-01)
 
 - Update ZEN Explorer to v0.5.0.
