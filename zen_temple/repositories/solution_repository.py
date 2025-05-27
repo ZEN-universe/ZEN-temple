@@ -37,7 +37,7 @@ class SolutionRepository:
             try:
                 ans.append(SolutionList.from_path(folder))
             except (FileNotFoundError, NotADirectoryError) as e:
-                print(e + f" - Skip {folder}")
+                print(str(e) + f" - Skip {folder}")
                 continue
         return ans
 

@@ -7,7 +7,7 @@ load_dotenv()
 
 class Config:
     def __init__(self) -> None:
-        self.SOLUTION_FOLDER: str = os.getenv("SOLUTION_FOLDER", "./outputs")  # type: ignore
+        self.SOLUTION_FOLDER: str = os.getenv("SOLUTION_FOLDER", "./outputs")
 
         self.EPS = os.getenv("EPS", 1e-6)
 

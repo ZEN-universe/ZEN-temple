@@ -30,8 +30,8 @@ dependencies = [
 Homepage = "https://github.com/ZEN-universe/ZEN-temple"
 Issues = "https://github.com/ZEN-universe/ZEN-temple/issues"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+packages = ["zen_temple"]
 
 [tool.setuptools.package-data]
 zen_temple = ["explorer/*", "explorer/**/*"]
@@ -47,4 +47,4 @@ ignore = ["E203", "E501"]
 [tool.mypy]
 mypy_path = "mypy"
 strict = "true"
-files = ["./src/"]
+files = ["./zen_temple/"]

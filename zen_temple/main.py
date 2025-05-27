@@ -48,7 +48,7 @@ def start_server(
     if app_name is None:
         app_name = ""
 
-    config.SOLUTIONS_FOLDER = solution_folder
+    config.SOLUTION_FOLDER = solution_folder
 
     env_file = Path(__file__).parent / "explorer" / "_app" / "env.js"
     with open(env_file, "w") as file:
@@ -58,7 +58,7 @@ def start_server(
 
     # Define uvicorn settings
     uvicorn_config = uvicorn.Config(
-        "src.zen_temple.main:app", port=port, log_level="info", reload=reload
+        "zen_temple.main:app", port=port, log_level="info", reload=reload
     )
     server = uvicorn.Server(uvicorn_config)
     if not no_open_browser:
@@ -66,18 +66,17 @@ def start_server(
     server.run()
 
 
-def find_outputs_folder(outputs_folder: str | None) -> None:
+def find_outputs_folder(outputs_folder: str | None) -> str:
     """
     Verify if the outputs folder exists. Otherwise, goes through a list of default paths.
     If none of the default paths exist, it raises an error.
     """
-    outputs_path = None
     if outputs_folder is not None:
         outputs_path = Path(outputs_folder)
-    if outputs_path is None or not outputs_path.exists():
+    else:
         outputs_path = Path.cwd() / "outputs"
-    if not outputs_path.exists():
-        outputs_path = Path.cwd()
+        if not outputs_path.exists():
+            outputs_path = Path.cwd()
 
     # Check if the outputs folder contains a scenarios.json file, i.e. that it is a valid outputs folder
     scenario_files = outputs_path.glob("**/scenarios.json")
@@ -89,12 +88,12 @@ def find_outputs_folder(outputs_folder: str | None) -> None:
     return str(outputs_path)
 
 
-def parse_arguments_and_run():
-    args = ArgumentParser(
+def parse_arguments_and_run() -> None:
+    parser = ArgumentParser(
         description="ZEN Temple - Visualization web platform for ZEN Garden"
     )
 
-    group = args.add_argument_group("Server Options")
+    group = parser.add_argument_group("Server Options")
     group.add_argument(
         "-p",
         "--port",
@@ -112,7 +111,7 @@ def parse_arguments_and_run():
         help="path to your solutions folder. Per default looks for data in ./outputs or in the current working directory",
     )
 
-    group = args.add_argument_group("Developer Options")
+    group = parser.add_argument_group("Developer Options")
     group.add_argument(
         "--app-name",
         required=False,
@@ -139,12 +138,12 @@ def parse_arguments_and_run():
         action="store_false",
         help="do not open the browser automatically",
     )
-    args = args.parse_args()
+    args = parser.parse_args()
 
     outputs_folder = find_outputs_folder(args.outputs_folder)
 
     start_server(
-        args.outputs_folder,
+        outputs_folder,
         args.port,
         app_name=args.app_name,
         api_url=args.api_url,

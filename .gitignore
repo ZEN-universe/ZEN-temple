@@ -23,8 +23,8 @@ garden
 
 # Exclude the explorer folder from the root of the project
 # It is imported during the build process run upon release
-src/zen_temple/explorer/*
-!src/zen_temple/explorer/index.html
+zen_temple/explorer/*
+!zen_temple/explorer/index.html
 
 # Exclude build folder
 build/
