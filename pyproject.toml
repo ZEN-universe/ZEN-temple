@@ -26,6 +26,11 @@ dependencies = [
     "mypy>=1.14.1",
 ]
 
+[project.optional-dependencies]
+mypy = [
+    "pandas-stubs",
+]
+
 [project.urls]
 Homepage = "https://github.com/ZEN-universe/ZEN-temple"
 Issues = "https://github.com/ZEN-universe/ZEN-temple/issues"

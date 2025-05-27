@@ -1,6 +1,8 @@
 # ZEN Temple
 ZEN Temple is a FastAPI Application.
 
+[![Type checker](https://github.com/ZEN-universe/ZEN-temple/actions/workflows/run-mypy.yml/badge.svg)](https://github.com/ZEN-universe/ZEN-temple/actions/workflows/run-mypy.yml)
+
 ## Installation
 
 Create a new conda environment, activate it, and install all dependencies:
