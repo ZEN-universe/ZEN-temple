@@ -71,13 +71,12 @@ def find_outputs_folder(outputs_folder: str | None) -> None:
     Verify if the outputs folder exists. Otherwise, goes through a list of default paths.
     If none of the default paths exist, it raises an error.
     """
-    outputs_path = None
     if outputs_folder is not None:
         outputs_path = Path(outputs_folder)
-    if outputs_path is None or not outputs_path.exists():
+    else:
         outputs_path = Path.cwd() / "outputs"
-    if not outputs_path.exists():
-        outputs_path = Path.cwd()
+        if not outputs_path.exists():
+            outputs_path = Path.cwd()
 
     # Check if the outputs folder contains a scenarios.json file, i.e. that it is a valid outputs folder
     scenario_files = outputs_path.glob("**/scenarios.json")
