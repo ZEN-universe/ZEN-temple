@@ -25,7 +25,7 @@ Activate your conda environment and run the application with this command:
 
 ```bash
 conda activate <your-env-name>
-uvicorn src.zen_temple.main:app --reload
+uvicorn zen_temple.main:app --reload
 ```
 
 ## Release workflow
