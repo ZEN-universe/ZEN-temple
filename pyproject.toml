@@ -35,8 +35,10 @@ mypy = [
 Homepage = "https://github.com/ZEN-universe/ZEN-temple"
 Issues = "https://github.com/ZEN-universe/ZEN-temple/issues"
 
-[tool.setuptools]
-packages = ["zen_temple"]
+[tool.setuptools.packages.find]
+where = ["zen_temple"]
+include = ["zen_temple", "zen_temple.*"]
+exclude = ["zen_temple.explorer", "zen_temple.explorer.*"]
 
 [tool.setuptools.package-data]
 zen_temple = ["explorer/*", "explorer/**/*"]

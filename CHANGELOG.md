@@ -4,6 +4,7 @@
 
 - Change folder structure for a flat layout by moving `src/zen_temple` to `zen_temple`.
 - Add script to automatically run `mypy` on every push to the server.
+- Add CLI interface to ZEN temple
 
 ## 0.5.0 (2025-05-01)
 
