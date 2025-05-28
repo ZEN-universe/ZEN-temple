@@ -42,6 +42,7 @@ def start_server(
     api_url: str | None = None,
     reload: bool = False,
     no_open_browser: bool = False,
+    fd: int | None = None,
 ) -> None:
     if api_url is None:
         api_url = f"http://127.0.0.1:{port}/api/"
@@ -58,7 +59,7 @@ def start_server(
 
     # Define uvicorn settings
     uvicorn_config = uvicorn.Config(
-        "zen_temple.main:app", port=port, log_level="info", reload=reload
+        "zen_temple.main:app", port=port, log_level="info", reload=reload, fd=fd,
     )
     server = uvicorn.Server(uvicorn_config)
     if not no_open_browser:
@@ -138,6 +139,13 @@ def parse_arguments_and_run() -> None:
         action="store_false",
         help="do not open the browser automatically",
     )
+    group.add_argument(
+        "--fd",
+        required=False,
+        type=int,
+        default=None,
+        help="file descriptor for the server that the server can bind to",
+    )
     args = parser.parse_args()
 
     outputs_folder = find_outputs_folder(args.outputs_folder)
@@ -149,6 +157,7 @@ def parse_arguments_and_run() -> None:
         api_url=args.api_url,
         reload=args.reload,
         no_open_browser=args.no_open_browser,
+        fd=args.fd,
     )
 
 

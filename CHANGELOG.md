@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.6.1 (2025-05-28)
+
+- Make package PEP 561 compliant.
+- Add CLI argument to pass a file descriptor to the server process.
+
 ## 0.6.0 (2025-05-27)
 
 - Change folder structure for a flat layout by moving `src/zen_temple` to `zen_temple`.
