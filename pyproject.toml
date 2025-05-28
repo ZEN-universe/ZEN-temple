@@ -40,7 +40,7 @@ include = ["zen_temple", "zen_temple.*"]
 exclude = ["zen_temple.explorer", "zen_temple.explorer.*"]
 
 [tool.setuptools.package-data]
-zen_temple = ["explorer/*", "explorer/**/*"]
+zen_temple = ["py.typed", "explorer/*", "explorer/**/*"]
 
 [tool.ruff]
 line-length = 90
