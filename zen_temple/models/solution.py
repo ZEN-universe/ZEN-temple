@@ -19,11 +19,8 @@ class ScenarioDetail(BaseModel):
 
     system: System
     reference_carrier: dict[str, str]
-    carriers_import: list[str]
-    carriers_export: list[str]
     carriers_input: dict[str, list[str]]
     carriers_output: dict[str, list[str]]
-    carriers_demand: list[str]
     edges: dict[str, str]
 
 
@@ -53,34 +50,25 @@ class SolutionDetail(BaseModel):
         scenario_details = {}
 
         for scenario_name, scenario in results.solution_loader.scenarios.items():
-            # TODO can we read this out when needed? E.g., when we actually look at demand or imports/exports? That would save a lot of time reading in the data
             system = scenario.system
             reference_carriers = results.get_df(
-                get_variable_name("set_reference_carriers", results_version),scenario_name=scenario_name
+                get_variable_name("set_reference_carriers", results_version),
+                scenario_name=scenario_name,
             ).to_dict()
 
-            df_import = results.get_df(
-                get_variable_name("availability_import", results_version),scenario_name=scenario_name
-            )
-
-            df_export = results.get_df(
-                get_variable_name("availability_export", results_version),scenario_name=scenario_name
-            )
-
-            df_demand = results.get_df(
-                get_variable_name("demand", results_version),scenario_name=scenario_name
-            )
-
             df_input_carriers = results.get_df(
-                get_variable_name("set_input_carriers", results_version),scenario_name=scenario_name
+                get_variable_name("set_input_carriers", results_version),
+                scenario_name=scenario_name,
             )
 
             df_output_carriers = results.get_df(
-                get_variable_name("set_output_carriers", results_version),scenario_name=scenario_name
+                get_variable_name("set_output_carriers", results_version),
+                scenario_name=scenario_name,
             )
 
             edges = results.get_df(
-                get_variable_name("set_nodes_on_edges", results_version),scenario_name=scenario_name
+                get_variable_name("set_nodes_on_edges", results_version),
+                scenario_name=scenario_name,
             )
 
             edges_dict = edges.to_dict()
@@ -99,25 +87,11 @@ class SolutionDetail(BaseModel):
                 if carriers_input_dict[key] == [""]:
                     carriers_input_dict[key] = []
 
-            carriers_import = list(
-                df_import.loc[df_import != 0].index.get_level_values("carrier").unique()
-            )
-            carriers_export = list(
-                df_export.loc[df_export != 0].index.get_level_values("carrier").unique()
-            )
-
-            carriers_demand = list(
-                df_demand.loc[df_demand != 0].index.get_level_values("carrier").unique()
-            )
-
             scenario_details[scenario_name] = ScenarioDetail(
                 system=system,
                 reference_carrier=reference_carriers,
-                carriers_import=carriers_import,
-                carriers_export=carriers_export,
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,
-                carriers_demand=carriers_demand,
                 edges=edges_dict,
             )
 
@@ -168,7 +142,11 @@ class SolutionList(BaseModel):
             first_scenario_name = scenarios[0]
             if scenarios_json[first_scenario_name]["sub_folder"] != "":
                 scenario_name = (
-                    "scenario_" + scenarios_json[first_scenario_name]["base_scenario"] + "/" + "scenario_" + scenarios_json[first_scenario_name]["sub_folder"]
+                    "scenario_"
+                    + scenarios_json[first_scenario_name]["base_scenario"]
+                    + "/"
+                    + "scenario_"
+                    + scenarios_json[first_scenario_name]["sub_folder"]
                 )
             else:
                 scenario_name = (

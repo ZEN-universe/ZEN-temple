@@ -136,7 +136,7 @@ def parse_arguments_and_run() -> None:
     group.add_argument(
         "--no-open-browser",
         required=False,
-        action="store_false",
+        action="store_true",
         help="do not open the browser automatically",
     )
     group.add_argument(

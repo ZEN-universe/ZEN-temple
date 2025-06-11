@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.6.2 (2025-06-12)
+
+- Fix no_open_browser option in CLI.
+- Do not load import, export, and demand dataframes when loading solution detail.
+
 ## 0.6.1 (2025-05-28)
 
 - Make package PEP 561 compliant.
