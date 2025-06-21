@@ -197,7 +197,7 @@ class SolutionRepository:
                     + current_col.columns.to_list()
                 ]
 
-                # Rename columns for propper rolling
+                # Rename columns for proper rolling
                 current_col.columns = range(current_col.shape[1])
 
                 current_col = current_col.T

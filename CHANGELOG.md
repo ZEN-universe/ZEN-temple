@@ -1,9 +1,10 @@
 ## Changelog
 
-## 0.6.2 (2025-06-12)
+## 0.6.2 (2025-06-21)
 
 - Fix no_open_browser option in CLI.
 - Do not load import, export, and demand dataframes when loading solution detail.
+- Fix #22 by removing unused components property from SolutionDetail.
 
 ## 0.6.1 (2025-05-28)
 
