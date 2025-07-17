@@ -72,9 +72,11 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :param year: The year of the ts. If skipped, the first year is taken.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        unit = self.get_unit(solution_name, component)
+        solution_folder = os.path.join(
+            config.SOLUTION_FOLDER, *solution_name.split(".")
+        )
         results = Results(solution_folder)
+        unit = self.__read_out_units(results, component)
 
         if year is None:
             year = 0
@@ -102,9 +104,11 @@ class SolutionRepository:
         :param component: Name of the component.
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        solution_folder = os.path.join(
+            config.SOLUTION_FOLDER, *solution_name.split(".")
+        )
         results = Results(solution_folder)
-        unit = self.get_unit(solution_name, component)
+        unit = self.__read_out_units(results, component)
         try:
             total: pd.DataFrame | pd.Series[Any] = results.get_total(
                 component, scenario_name=scenario
@@ -123,20 +127,71 @@ class SolutionRepository:
 
         :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        solution_folder = os.path.join(
+            config.SOLUTION_FOLDER, *solution_name.split(".")
+        )
         results = Results(solution_folder)
+        return self.__read_out_units(results, component)
 
-        unit_str: str | None = None
+    def __read_out_units(self, results: Results, component: str) -> Optional[str]:
+        """
+        Reads out the units of a component from the results object.
+        """
         try:
-            unit: str | pd.DataFrame = results.get_unit(component)
+            unit = results.get_unit(component)
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
-            unit_str = str(unit.to_csv(lineterminator="\n"))  # type: ignore
-
+            return str(unit.to_csv(lineterminator="\n"))
         except Exception as e:
             print(e)
-            unit_str = None
-        return unit_str
+            return None
+        return None
+
+    @cache
+    def get_production(
+        self,
+        solution_name: str,
+        scenario: Optional[str] = None,
+    ) -> dict[str, Optional[str]]:
+        """
+        Returns the production data of a solution.
+        It returns a dictionary with the unit and the data of the production.
+
+        :param solution_name: Name of the solution.
+        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
+        :return: A dictionary with the unit and the data of the production.
+        """
+        path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        results = Results(path)
+        response = {"unit": self.__read_out_units(results, "demand")}
+
+        components = [
+            "flow_conversion_output",
+            "flow_conversion_input",
+            "flow_storage_discharge",
+            "flow_storage_charge",
+            "flow_import",
+            "flow_export",
+            "shed_demand",
+            "demand",
+        ]
+        for component in components:
+            try:
+                total: pd.DataFrame | pd.Series[Any] = results.get_total(
+                    get_variable_name(
+                        component, results.get_analysis().zen_garden_version
+                    ),
+                    scenario_name=scenario,
+                )
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"{component} not found!")
+
+            if type(total) is not pd.Series:
+                total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+
+            response.update({component: str(total.to_csv(lineterminator="\n"))})
+
+        return response
 
     @cache
     def get_energy_balance(
@@ -159,7 +214,9 @@ class SolutionRepository:
         :param year: The desired year. If skipped, the first year is taken.
         :param rolling_average_window_size: Size of the rolling average window.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        solution_folder = os.path.join(
+            config.SOLUTION_FOLDER, *solution_name.split(".")
+        )
         results = Results(solution_folder)
 
         if year is None:
@@ -171,7 +228,8 @@ class SolutionRepository:
 
         # Drop duplicates of all dataframes
         balances = {
-            key: val[~val.index.duplicated(keep="first")] for key, val in balances.items()
+            key: val[~val.index.duplicated(keep="first")]
+            for key, val in balances.items()
         }
 
         # Drop variables that only contain zeros (except for demand)
@@ -183,7 +241,9 @@ class SolutionRepository:
             if type(series) is not pd.Series and key != demand_name:
                 if series.empty:
                     continue
-                balances[key] = series.loc[(abs(series) > config.EPS * max(series)).any(axis=1)]
+                balances[key] = series.loc[
+                    (abs(series) > config.EPS * max(series)).any(axis=1)
+                ]
 
             if rolling_average_window_size > 1:
                 current_col = balances[key]

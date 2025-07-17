@@ -62,6 +62,17 @@ async def get_unit(solution_name: str, variable_name: str) -> Optional[str]:
     return ans
 
 
+@router.get("/get_production/{solution_name}")
+async def get_production(
+    solution_name: str, scenario: Optional[str] = None
+) -> dict[str, Optional[str]]:
+    """
+    Get the production of a solution given the solution name and the scenario. If no scenario is provided, the first scenarios in the list is taken.
+    """
+    ans = solution_repository.get_production(solution_name, scenario)
+    return ans
+
+
 @router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
 async def get_energy_balance(
     solution_name: str,
