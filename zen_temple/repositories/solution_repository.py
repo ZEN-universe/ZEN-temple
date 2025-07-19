@@ -214,11 +214,11 @@ class SolutionRepository:
         :return: A dictionary with the unit and the data of the costs.
         """
         results = self.__load_results(solution_name)
-        response = {"unit": self.__read_out_units(results, "capex_yearly")}
+        response = {"unit": self.__read_out_units(results, "cost_capex_yearly")}
 
         components = [
-            "capex_yearly",
-            "opex_yearly",
+            "cost_capex_yearly",
+            "cost_opex_yearly",
             "cost_carbon_emissions_total",
             "cost_carrier",
             "cost_shed_demand",
