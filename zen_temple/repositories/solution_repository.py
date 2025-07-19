@@ -18,6 +18,16 @@ from ..models.solution import (
 
 
 class SolutionRepository:
+    def __load_results(self, solution_name: str) -> Results:
+        """
+        Loads the results of a solution given its name.
+
+        :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
+        :return: Results object of the solution.
+        """
+        path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        return Results(path)
+
     def get_list(self) -> list[SolutionList]:
         """
         Creates a list of Solution-objects of all solutions that are contained in any folder contained in the configured SOLUTION_FOLDER.
@@ -72,10 +82,7 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :param year: The year of the ts. If skipped, the first year is taken.
         """
-        solution_folder = os.path.join(
-            config.SOLUTION_FOLDER, *solution_name.split(".")
-        )
-        results = Results(solution_folder)
+        results = self.__load_results(solution_name)
         unit = self.__read_out_units(results, component)
 
         if year is None:
@@ -104,10 +111,7 @@ class SolutionRepository:
         :param component: Name of the component.
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         """
-        solution_folder = os.path.join(
-            config.SOLUTION_FOLDER, *solution_name.split(".")
-        )
-        results = Results(solution_folder)
+        results = self.__load_results(solution_name)
         unit = self.__read_out_units(results, component)
         try:
             total: pd.DataFrame | pd.Series[Any] = results.get_total(
@@ -116,10 +120,19 @@ class SolutionRepository:
         except KeyError:
             raise HTTPException(status_code=404, detail=f"{component} not found!")
 
-        if type(total) is not pd.Series:
-            total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+        total = self.__convert_total_to_series(total)
 
         return DataResult(data_csv=str(total.to_csv(lineterminator="\n")), unit=unit)
+
+    def __convert_total_to_series(
+        self, total: "pd.DataFrame | pd.Series[Any]"
+    ) -> "pd.Series[Any]":
+        """
+        Converts the total to a pandas Series.
+        """
+        if type(total) is not pd.Series:
+            return total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]  # type: ignore[no-any-return]
+        return total
 
     def get_unit(self, solution_name: str, component: str) -> Optional[str]:
         """
@@ -127,11 +140,7 @@ class SolutionRepository:
 
         :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
         """
-        solution_folder = os.path.join(
-            config.SOLUTION_FOLDER, *solution_name.split(".")
-        )
-        results = Results(solution_folder)
-        return self.__read_out_units(results, component)
+        return self.__read_out_units(self.__load_results(solution_name), component)
 
     def __read_out_units(self, results: Results, component: str) -> Optional[str]:
         """
@@ -161,8 +170,7 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :return: A dictionary with the unit and the data of the production.
         """
-        path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        results = Results(path)
+        results = self.__load_results(solution_name)
         response = {"unit": self.__read_out_units(results, "demand")}
 
         components = [
@@ -186,9 +194,47 @@ class SolutionRepository:
             except KeyError:
                 raise HTTPException(status_code=404, detail=f"{component} not found!")
 
-            if type(total) is not pd.Series:
-                total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+            total = self.__convert_total_to_series(total)
+            response.update({component: str(total.to_csv(lineterminator="\n"))})
 
+        return response
+
+    @cache
+    def get_costs(
+        self,
+        solution_name: str,
+        scenario: Optional[str] = None,
+    ) -> dict[str, Optional[str]]:
+        """
+        Returns the costs data of a solution.
+        It returns a dictionary with the unit and the data of the costs.
+
+        :param solution_name: Name of the solution.
+        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
+        :return: A dictionary with the unit and the data of the costs.
+        """
+        results = self.__load_results(solution_name)
+        response = {"unit": self.__read_out_units(results, "capex_yearly")}
+
+        components = [
+            "capex_yearly",
+            "opex_yearly",
+            "cost_carbon_emissions_total",
+            "cost_carrier",
+            "cost_shed_demand",
+        ]
+        for component in components:
+            try:
+                total: pd.DataFrame | pd.Series[Any] = results.get_total(
+                    get_variable_name(
+                        component, results.get_analysis().zen_garden_version
+                    ),
+                    scenario_name=scenario,
+                )
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"{component} not found!")
+
+            total = self.__convert_total_to_series(total)
             response.update({component: str(total.to_csv(lineterminator="\n"))})
 
         return response
@@ -214,10 +260,7 @@ class SolutionRepository:
         :param year: The desired year. If skipped, the first year is taken.
         :param rolling_average_window_size: Size of the rolling average window.
         """
-        solution_folder = os.path.join(
-            config.SOLUTION_FOLDER, *solution_name.split(".")
-        )
-        results = Results(solution_folder)
+        results = self.__load_results(solution_name)
 
         if year is None:
             year = 0
