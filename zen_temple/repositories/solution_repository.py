@@ -11,7 +11,6 @@ from zen_temple.utils import get_variable_name
 
 from ..config import config
 from ..models.solution import (
-    DataResult,
     SolutionDetail,
     SolutionList,
 )
@@ -37,7 +36,8 @@ class SolutionRepository:
         """
         solutions_folders: set[str] = set()
         ans = []
-        # TODO this is bad because if you accidently have a scenarios.json in a subscenario folder, it will be included in the list. Better check if parent folder is a solution (has scenarios.json)
+        # TODO this is bad because if you accidentally have a scenarios.json in a subscenario folder, it will be included in the list.
+        #      Better check if the parent folder is a solution, i.e., whether is has a scenarios.json
         for dirpath, dirnames, filenames in walk(config.SOLUTION_FOLDER):
             if "scenarios.json" in filenames:
                 solutions_folders.add(dirpath)
@@ -69,11 +69,12 @@ class SolutionRepository:
     def get_full_ts(
         self,
         solution_name: str,
-        component: str,
+        components_str: str,
+        unit_component: Optional[str] = None,
         scenario: Optional[str] = None,
         year: Optional[int] = None,
         rolling_average_window_size: int = 1,
-    ) -> DataResult:
+    ) -> dict[str, Optional[str]]:
         """
         Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
 
@@ -82,37 +83,51 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :param year: The year of the ts. If skipped, the first year is taken.
         """
+        components = [x for x in components_str.split(",") if x != ""]
+        if len(components) == 0:
+            raise HTTPException(status_code=400, detail="No components provided!")
+
         results = self.__load_results(solution_name)
-        unit = self.__read_out_units(results, component)
+        unit = self.__read_out_units(
+            results,
+            (
+                unit_component
+                if unit_component and unit_component is not None
+                else components[0]
+            ),
+        )
+        response = {"unit": unit}
 
         if year is None:
             year = 0
 
-        full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
-        data_csv = self.__process_full_ts(full_ts, rolling_average_window_size)
+        for component in components:
+            full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+            if full_ts.shape[0] == 0:
+                response.update({component: ""})
+                continue
 
-        return DataResult(data_csv=data_csv, unit=unit)
+            full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
+            full_ts = full_ts.loc[
+                (abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)
+            ]
 
-    def __process_full_ts(
-        self,
-        full_ts: Any,
-        rolling_average_window_size: int = 1,
-    ) -> str:
-        if full_ts.shape[0] == 0:
-            return ""
+            if rolling_average_window_size > 1:
+                full_ts = full_ts.T.rolling(rolling_average_window_size).mean().T
 
-        full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
-        full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
+            data_csv = str(full_ts.to_csv(lineterminator="\n"))
+            response.update({component: data_csv})
 
-        if rolling_average_window_size > 1:
-            full_ts = full_ts.rolling(rolling_average_window_size, axis=1).mean()
-
-        return str(full_ts.to_csv(lineterminator="\n"))
+        return response
 
     @cache
     def get_total(
-        self, solution_name: str, component: str, scenario: Optional[str] = None
-    ) -> DataResult:
+        self,
+        solution_name: str,
+        components_str: str,
+        unit_component: Optional[str] = None,
+        scenario: Optional[str] = None,
+    ) -> dict[str, Optional[str]]:
         """
         Returns the total and the unit of a component given the solution name, the scenario name and the component name.
 
@@ -120,28 +135,34 @@ class SolutionRepository:
         :param component: Name of the component.
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         """
+        components = [x for x in components_str.split(",") if x != ""]
+        if len(components) == 0:
+            raise HTTPException(status_code=400, detail="No components provided!")
+
         results = self.__load_results(solution_name)
-        unit = self.__read_out_units(results, component)
-        try:
-            total: pd.DataFrame | pd.Series[Any] = results.get_total(
-                component, scenario_name=scenario
-            )
-        except KeyError:
-            raise HTTPException(status_code=404, detail=f"{component} not found!")
+        unit = self.__read_out_units(
+            results,
+            (
+                unit_component
+                if unit_component and unit_component is not None
+                else components[0]
+            ),
+        )
+        response = {"unit": unit}
 
-        total = self.__convert_total_to_series(total)
+        for component in components:
+            try:
+                total: pd.DataFrame | pd.Series[Any] = results.get_total(
+                    component, scenario_name=scenario
+                )
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"{component} not found!")
 
-        return DataResult(data_csv=str(total.to_csv(lineterminator="\n")), unit=unit)
+            if type(total) is not pd.Series:
+                total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+            response.update({component: str(total.to_csv(lineterminator="\n"))})
 
-    def __convert_total_to_series(
-        self, total: "pd.DataFrame | pd.Series[Any]"
-    ) -> "pd.Series[Any]":
-        """
-        Converts the total to a pandas Series.
-        """
-        if type(total) is not pd.Series:
-            return total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]  # type: ignore[no-any-return]
-        return total
+        return response
 
     def get_unit(self, solution_name: str, component: str) -> Optional[str]:
         """
@@ -163,90 +184,6 @@ class SolutionRepository:
         except Exception as e:
             print(e)
             return None
-        return None
-
-    @cache
-    def get_production(
-        self,
-        solution_name: str,
-        scenario: Optional[str] = None,
-    ) -> dict[str, Optional[str]]:
-        """
-        Returns the production data of a solution.
-        It returns a dictionary with the unit and the data of the production.
-
-        :param solution_name: Name of the solution.
-        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
-        :return: A dictionary with the unit and the data of the production.
-        """
-        results = self.__load_results(solution_name)
-        response = {"unit": self.__read_out_units(results, "demand")}
-
-        components = [
-            "flow_conversion_output",
-            "flow_conversion_input",
-            "flow_storage_discharge",
-            "flow_storage_charge",
-            "flow_import",
-            "flow_export",
-            "shed_demand",
-            "demand",
-        ]
-        for component in components:
-            try:
-                total: pd.DataFrame | pd.Series[Any] = results.get_total(
-                    get_variable_name(
-                        component, results.get_analysis().zen_garden_version
-                    ),
-                    scenario_name=scenario,
-                )
-            except KeyError:
-                raise HTTPException(status_code=404, detail=f"{component} not found!")
-
-            total = self.__convert_total_to_series(total)
-            response.update({component: str(total.to_csv(lineterminator="\n"))})
-
-        return response
-
-    @cache
-    def get_costs(
-        self,
-        solution_name: str,
-        scenario: Optional[str] = None,
-    ) -> dict[str, Optional[str]]:
-        """
-        Returns the costs data of a solution.
-        It returns a dictionary with the unit and the data of the costs.
-
-        :param solution_name: Name of the solution.
-        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
-        :return: A dictionary with the unit and the data of the costs.
-        """
-        results = self.__load_results(solution_name)
-        response = {"unit": self.__read_out_units(results, "cost_capex_yearly")}
-
-        components = [
-            "cost_capex_yearly",
-            "cost_opex_yearly",
-            "cost_carbon_emissions_total",
-            "cost_carrier",
-            "cost_shed_demand",
-        ]
-        for component in components:
-            try:
-                total: pd.DataFrame | pd.Series[Any] = results.get_total(
-                    get_variable_name(
-                        component, results.get_analysis().zen_garden_version
-                    ),
-                    scenario_name=scenario,
-                )
-            except KeyError:
-                raise HTTPException(status_code=404, detail=f"{component} not found!")
-
-            total = self.__convert_total_to_series(total)
-            response.update({component: str(total.to_csv(lineterminator="\n"))})
-
-        return response
 
     @cache
     def get_energy_balance(
@@ -325,48 +262,6 @@ class SolutionRepository:
         ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
 
         return ans
-
-    @cache
-    def get_storage(
-        self,
-        solution_name: str,
-        scenario: Optional[str] = None,
-        year: Optional[int] = None,
-        rolling_average_window_size: int = 1,
-    ) -> dict[str, Optional[str]]:
-        """
-        Returns the storage data of a solution.
-        It returns a dictionary with the unit and the data of the storage.
-
-        :param solution_name: Name of the solution.
-        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
-        :return: A dictionary with the unit and the data of the storage.
-        """
-        results = self.__load_results(solution_name)
-        response = {"unit": self.__read_out_units(results, "storage_level")}
-
-        if year is None:
-            year = 0
-
-        components = [
-            "storage_level",
-            "flow_storage_charge",
-            "flow_storage_discharge",
-            "flow_storage_spillage",
-            "flow_storage_inflow",
-        ]
-        for component in components:
-            full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
-
-            response.update(
-                {
-                    component: self.__process_full_ts(
-                        full_ts, rolling_average_window_size
-                    )
-                }
-            )
-
-        return response
 
 
 solution_repository = SolutionRepository()
