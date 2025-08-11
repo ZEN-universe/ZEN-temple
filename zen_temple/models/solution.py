@@ -173,11 +173,3 @@ class SolutionList(BaseModel):
 
         return solution
 
-
-class DataResult(BaseModel):
-    """
-    DataResult defines the default model that is used to return the CSV string of a dataframe.
-    """
-
-    data_csv: str
-    unit: Optional[str]

@@ -1,8 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import Query, APIRouter
 
-from ..models.solution import DataResult, SolutionDetail, SolutionList
+from ..models.solution import SolutionDetail, SolutionList
 from ..repositories.solution_repository import solution_repository
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
@@ -21,36 +21,44 @@ async def get_detail(solution_name: str) -> SolutionDetail:
     """
     Get the details of a solution.
     """
-    ans = solution_repository.get_detail(solution_name)
-    return ans
+    return solution_repository.get_detail(solution_name)
 
 
-@router.get("/get_total/{solution_name}/{variable_name}")
+@router.get("/get_total")
 async def get_total(
-    solution_name: str, variable_name: str, scenario: Optional[str] = None
-) -> DataResult:
+    solution_name: str,
+    components: list[str] = Query(...),
+    unit_component: Optional[str] = None,
+    scenario: Optional[str] = None,
+) -> dict[str, Optional[str]]:
     """
     Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
-    ans = solution_repository.get_total(solution_name, variable_name, scenario)
-    return ans
+    return solution_repository.get_total(
+        solution_name, ",".join(components), unit_component, scenario
+    )
 
 
-@router.get("/get_full_ts/{solution_name}/{variable_name}")
+@router.get("/get_full_ts")
 async def get_full_ts(
     solution_name: str,
-    variable_name: str,
+    components: list[str] = Query(...),
+    unit_component: Optional[str] = None,
     scenario: Optional[str] = None,
     year: Optional[int] = None,
     rolling_average_size: int = 1,
-) -> DataResult:
+) -> dict[str, Optional[str]]:
     """
     Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
-    ans = solution_repository.get_full_ts(
-        solution_name, variable_name, scenario, year, rolling_average_size
+    return solution_repository.get_full_ts(
+        solution_name,
+        ",".join(components),
+        unit_component,
+        scenario,
+        year,
+        rolling_average_size,
     )
-    return ans
 
 
 @router.get("/get_unit/{solution_name}/{variable_name}")
@@ -58,8 +66,7 @@ async def get_unit(solution_name: str, variable_name: str) -> Optional[str]:
     """
     Get the unit of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
-    ans = solution_repository.get_unit(solution_name, variable_name)
-    return ans
+    return solution_repository.get_unit(solution_name, variable_name)
 
 
 @router.get("/get_energy_balance/{solution_name}/{node_name}/{carrier_name}")
@@ -75,7 +82,6 @@ async def get_energy_balance(
     Get the energy balance of a specific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
     If no scenario and/or year is provided, the first one is taken.
     """
-    ans = solution_repository.get_energy_balance(
+    return solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year, rolling_average_size
     )
-    return ans

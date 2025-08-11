@@ -11,13 +11,22 @@ from zen_temple.utils import get_variable_name
 
 from ..config import config
 from ..models.solution import (
-    DataResult,
     SolutionDetail,
     SolutionList,
 )
 
 
 class SolutionRepository:
+    def __load_results(self, solution_name: str) -> Results:
+        """
+        Loads the results of a solution given its name.
+
+        :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
+        :return: Results object of the solution.
+        """
+        path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        return Results(path)
+
     def get_list(self) -> list[SolutionList]:
         """
         Creates a list of Solution-objects of all solutions that are contained in any folder contained in the configured SOLUTION_FOLDER.
@@ -27,7 +36,8 @@ class SolutionRepository:
         """
         solutions_folders: set[str] = set()
         ans = []
-        # TODO this is bad because if you accidently have a scenarios.json in a subscenario folder, it will be included in the list. Better check if parent folder is a solution (has scenarios.json)
+        # TODO this is bad because if you accidentally have a scenarios.json in a subscenario folder, it will be included in the list.
+        #      Better check if the parent folder is a solution, i.e., whether is has a scenarios.json
         for dirpath, dirnames, filenames in walk(config.SOLUTION_FOLDER):
             if "scenarios.json" in filenames:
                 solutions_folders.add(dirpath)
@@ -59,11 +69,12 @@ class SolutionRepository:
     def get_full_ts(
         self,
         solution_name: str,
-        component: str,
+        components_str: str,
+        unit_component: Optional[str] = None,
         scenario: Optional[str] = None,
         year: Optional[int] = None,
         rolling_average_window_size: int = 1,
-    ) -> DataResult:
+    ) -> dict[str, Optional[str]]:
         """
         Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
 
@@ -72,29 +83,51 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :param year: The year of the ts. If skipped, the first year is taken.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        unit = self.get_unit(solution_name, component)
-        results = Results(solution_folder)
+        components = [x for x in components_str.split(",") if x != ""]
+        if len(components) == 0:
+            raise HTTPException(status_code=400, detail="No components provided!")
+
+        results = self.__load_results(solution_name)
+        unit = self.__read_out_units(
+            results,
+            (
+                unit_component
+                if unit_component and unit_component is not None
+                else components[0]
+            ),
+        )
+        response = {"unit": unit}
 
         if year is None:
             year = 0
 
-        full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
-        if full_ts.shape[0] == 0:
-            return DataResult(data_csv="", unit=unit)
+        for component in components:
+            full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+            if full_ts.shape[0] == 0:
+                response.update({component: ""})
+                continue
 
-        full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
-        full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
+            full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
+            full_ts = full_ts.loc[
+                (abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)
+            ]
 
-        if rolling_average_window_size > 1:
-            full_ts = full_ts.rolling(rolling_average_window_size, axis=1).mean()
+            if rolling_average_window_size > 1:
+                full_ts = full_ts.T.rolling(rolling_average_window_size).mean().T
 
-        return DataResult(data_csv=str(full_ts.to_csv(lineterminator="\n")), unit=unit)
+            data_csv = str(full_ts.to_csv(lineterminator="\n"))
+            response.update({component: data_csv})
+
+        return response
 
     @cache
     def get_total(
-        self, solution_name: str, component: str, scenario: Optional[str] = None
-    ) -> DataResult:
+        self,
+        solution_name: str,
+        components_str: str,
+        unit_component: Optional[str] = None,
+        scenario: Optional[str] = None,
+    ) -> dict[str, Optional[str]]:
         """
         Returns the total and the unit of a component given the solution name, the scenario name and the component name.
 
@@ -102,20 +135,34 @@ class SolutionRepository:
         :param component: Name of the component.
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        results = Results(solution_folder)
-        unit = self.get_unit(solution_name, component)
-        try:
-            total: pd.DataFrame | pd.Series[Any] = results.get_total(
-                component, scenario_name=scenario
-            )
-        except KeyError:
-            raise HTTPException(status_code=404, detail=f"{component} not found!")
+        components = [x for x in components_str.split(",") if x != ""]
+        if len(components) == 0:
+            raise HTTPException(status_code=400, detail="No components provided!")
 
-        if type(total) is not pd.Series:
-            total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+        results = self.__load_results(solution_name)
+        unit = self.__read_out_units(
+            results,
+            (
+                unit_component
+                if unit_component and unit_component is not None
+                else components[0]
+            ),
+        )
+        response = {"unit": unit}
 
-        return DataResult(data_csv=str(total.to_csv(lineterminator="\n")), unit=unit)
+        for component in components:
+            try:
+                total: pd.DataFrame | pd.Series[Any] = results.get_total(
+                    component, scenario_name=scenario
+                )
+            except KeyError:
+                raise HTTPException(status_code=404, detail=f"{component} not found!")
+
+            if type(total) is not pd.Series:
+                total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
+            response.update({component: str(total.to_csv(lineterminator="\n"))})
+
+        return response
 
     def get_unit(self, solution_name: str, component: str) -> Optional[str]:
         """
@@ -123,20 +170,20 @@ class SolutionRepository:
 
         :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        results = Results(solution_folder)
+        return self.__read_out_units(self.__load_results(solution_name), component)
 
-        unit_str: str | None = None
+    def __read_out_units(self, results: Results, component: str) -> Optional[str]:
+        """
+        Reads out the units of a component from the results object.
+        """
         try:
-            unit: str | pd.DataFrame = results.get_unit(component)
+            unit = results.get_unit(component)
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
-            unit_str = str(unit.to_csv(lineterminator="\n"))  # type: ignore
-
+            return str(unit.to_csv(lineterminator="\n"))
         except Exception as e:
             print(e)
-            unit_str = None
-        return unit_str
+            return None
 
     @cache
     def get_energy_balance(
@@ -159,8 +206,7 @@ class SolutionRepository:
         :param year: The desired year. If skipped, the first year is taken.
         :param rolling_average_window_size: Size of the rolling average window.
         """
-        solution_folder = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
-        results = Results(solution_folder)
+        results = self.__load_results(solution_name)
 
         if year is None:
             year = 0
@@ -171,7 +217,8 @@ class SolutionRepository:
 
         # Drop duplicates of all dataframes
         balances = {
-            key: val[~val.index.duplicated(keep="first")] for key, val in balances.items()
+            key: val[~val.index.duplicated(keep="first")]
+            for key, val in balances.items()
         }
 
         # Drop variables that only contain zeros (except for demand)
@@ -183,7 +230,9 @@ class SolutionRepository:
             if type(series) is not pd.Series and key != demand_name:
                 if series.empty:
                     continue
-                balances[key] = series.loc[(abs(series) > config.EPS * max(series)).any(axis=1)]
+                balances[key] = series.loc[
+                    (abs(series) > config.EPS * max(series)).any(axis=1)
+                ]
 
             if rolling_average_window_size > 1:
                 current_col = balances[key]

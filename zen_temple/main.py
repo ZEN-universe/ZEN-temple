@@ -57,14 +57,10 @@ def start_server(
             f'export const env={{"PUBLIC_TEMPLE_URL":"{api_url}", "PUBLIC_APP_NAME":"{app_name}"}}'
         )
 
-    # Define uvicorn settings
-    uvicorn_config = uvicorn.Config(
-        "zen_temple.main:app", port=port, log_level="info", reload=reload, fd=fd,
-    )
-    server = uvicorn.Server(uvicorn_config)
+    # Start the uvicorn server
     if not no_open_browser:
         webbrowser.open(f"http://localhost:{port}/", new=2)
-    server.run()
+    uvicorn.run("zen_temple.main:app", host="localhost", port=port, log_level="info", reload=reload, fd=fd)
 
 
 def find_outputs_folder(outputs_folder: str | None) -> str:
