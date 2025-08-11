@@ -89,8 +89,17 @@ class SolutionRepository:
             year = 0
 
         full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+        data_csv = self.__process_full_ts(full_ts, rolling_average_window_size)
+
+        return DataResult(data_csv=data_csv, unit=unit)
+
+    def __process_full_ts(
+        self,
+        full_ts: Any,
+        rolling_average_window_size: int = 1,
+    ) -> str:
         if full_ts.shape[0] == 0:
-            return DataResult(data_csv="", unit=unit)
+            return ""
 
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
         full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
@@ -98,7 +107,7 @@ class SolutionRepository:
         if rolling_average_window_size > 1:
             full_ts = full_ts.rolling(rolling_average_window_size, axis=1).mean()
 
-        return DataResult(data_csv=str(full_ts.to_csv(lineterminator="\n")), unit=unit)
+        return str(full_ts.to_csv(lineterminator="\n"))
 
     @cache
     def get_total(
@@ -316,6 +325,48 @@ class SolutionRepository:
         ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
 
         return ans
+
+    @cache
+    def get_storage(
+        self,
+        solution_name: str,
+        scenario: Optional[str] = None,
+        year: Optional[int] = None,
+        rolling_average_window_size: int = 1,
+    ) -> dict[str, Optional[str]]:
+        """
+        Returns the storage data of a solution.
+        It returns a dictionary with the unit and the data of the storage.
+
+        :param solution_name: Name of the solution.
+        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
+        :return: A dictionary with the unit and the data of the storage.
+        """
+        results = self.__load_results(solution_name)
+        response = {"unit": self.__read_out_units(results, "storage_level")}
+
+        if year is None:
+            year = 0
+
+        components = [
+            "storage_level",
+            "flow_storage_charge",
+            "flow_storage_discharge",
+            "flow_storage_spillage",
+            "flow_storage_inflow",
+        ]
+        for component in components:
+            full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
+
+            response.update(
+                {
+                    component: self.__process_full_ts(
+                        full_ts, rolling_average_window_size
+                    )
+                }
+            )
+
+        return response
 
 
 solution_repository = SolutionRepository()

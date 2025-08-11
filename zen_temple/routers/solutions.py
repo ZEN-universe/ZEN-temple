@@ -94,3 +94,18 @@ async def get_energy_balance(
     return solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year, rolling_average_size
     )
+
+
+@router.get("/get_storage/{solution_name}")
+async def get_storage(
+    solution_name: str,
+    scenario: Optional[str] = None,
+    year: Optional[int] = 0,
+    rolling_average_size: int = 1,
+) -> dict[str, Optional[str]]:
+    """
+    Get the storage of a solution given the solution name and the scenario. If no scenario is provided, the first scenarios in the list is taken.
+    """
+    return solution_repository.get_storage(
+        solution_name, scenario, year=year, rolling_average_window_size=rolling_average_size
+    )
