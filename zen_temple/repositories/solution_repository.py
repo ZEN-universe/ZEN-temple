@@ -26,12 +26,18 @@ class SolutionRepository:
         """
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         return Results(path)
+    
+    def __dataframe_to_csv(self, df: 'pd.DataFrame | pd.Series[Any]') -> str:
+        """
+        Converts a DataFrame or Series to a CSV string.
+        """
+        return str(df.to_csv(lineterminator="\n", float_format=f"%.{config.RESPONSE_SIGNIFICANT_DIGITS}g"))
 
     def get_list(self) -> list[SolutionList]:
         """
         Creates a list of Solution-objects of all solutions that are contained in any folder contained in the configured SOLUTION_FOLDER.
 
-        This function is very forgiving, it tries to instanciate a Solution for all folders in SOLUTION_FOLDER that contain a 'scenarios.json' file.
+        This function is very forgiving, it tries to instantiate a solution for all folders in SOLUTION_FOLDER that contain a 'scenarios.json' file.
         If this fails, it skips the folder.
         """
         solutions_folders: set[str] = set()
@@ -57,7 +63,7 @@ class SolutionRepository:
         Returns the SolutionDetail of a solution given its name.
 
         The solution name can contain dots which are treated as folders.
-        So for example foo/bar.solution will resolve to the solition contained in foo/bar/solution, relative to
+        So for example foo/bar.solution will resolve to the solution contained in foo/bar/solution, relative to
         the SOLUTION_FOLDER config value.
 
         :param solution_name: Name of the solution
@@ -115,8 +121,7 @@ class SolutionRepository:
             if rolling_average_window_size > 1:
                 full_ts = full_ts.T.rolling(rolling_average_window_size).mean().T
 
-            data_csv = str(full_ts.to_csv(lineterminator="\n"))
-            response.update({component: data_csv})
+            response.update({component: self.__dataframe_to_csv(full_ts)})
 
         return response
 
@@ -156,11 +161,12 @@ class SolutionRepository:
                     component, scenario_name=scenario
                 )
             except KeyError:
-                raise HTTPException(status_code=404, detail=f"{component} not found!")
+                raise HTTPException(status_code=404, detail=f"{component} not found in {solution_name}")
 
+            # Skip irrelevant rows in dataframes
             if type(total) is not pd.Series:
                 total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
-            response.update({component: str(total.to_csv(lineterminator="\n"))})
+            response.update({component: self.__dataframe_to_csv(total)})
 
         return response
 
@@ -180,7 +186,7 @@ class SolutionRepository:
             unit = results.get_unit(component)
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
-            return str(unit.to_csv(lineterminator="\n"))
+            return self.__dataframe_to_csv(unit)
         except Exception as e:
             print(e)
             return None
@@ -259,7 +265,7 @@ class SolutionRepository:
 
                 balances[key] = current_col
 
-        ans = {key: val.to_csv(lineterminator="\n") for key, val in balances.items()}
+        ans = {key: self.__dataframe_to_csv(val) for key, val in balances.items()}
 
         return ans
 

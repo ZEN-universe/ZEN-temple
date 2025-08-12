@@ -40,6 +40,7 @@ def start_server(
     port: int,
     app_name: str | None = None,
     api_url: str | None = None,
+    significant_digits: int | None = None,
     reload: bool = False,
     no_open_browser: bool = False,
     fd: int | None = None,
@@ -50,6 +51,8 @@ def start_server(
         app_name = ""
 
     config.SOLUTION_FOLDER = solution_folder
+    if significant_digits is not None:
+        config.RESPONSE_SIGNIFICANT_DIGITS = significant_digits
 
     env_file = Path(__file__).parent / "explorer" / "_app" / "env.js"
     with open(env_file, "w") as file:
@@ -107,6 +110,13 @@ def parse_arguments_and_run() -> None:
         default=None,
         help="path to your solutions folder. Per default looks for data in ./outputs or in the current working directory",
     )
+    group.add_argument(
+        "--significant-digits",
+        required=False,
+        type=int,
+        default=None,
+        help="number of significant digits to use in the response. If not set, uses the value from the environment variable RESPONSE_SIGNIFICANT_DIGITS (default: 4)",
+    )
 
     group = parser.add_argument_group("Developer Options")
     group.add_argument(
@@ -151,6 +161,7 @@ def parse_arguments_and_run() -> None:
         args.port,
         app_name=args.app_name,
         api_url=args.api_url,
+        significant_digits=args.significant_digits,
         reload=args.reload,
         no_open_browser=args.no_open_browser,
         fd=args.fd,
