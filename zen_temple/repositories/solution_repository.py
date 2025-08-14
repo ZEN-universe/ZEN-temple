@@ -26,12 +26,15 @@ class SolutionRepository:
         """
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         return Results(path)
-    
-    def __dataframe_to_csv(self, df: 'pd.DataFrame | pd.Series[Any]') -> str:
+
+    def __dataframe_to_csv(self, df: "pd.DataFrame | pd.Series[Any]") -> str:
         """
         Converts a DataFrame or Series to a CSV string.
         """
-        return str(df.to_csv(lineterminator="\n", float_format=f"%.{config.RESPONSE_SIGNIFICANT_DIGITS}g"))
+        return df.to_csv(
+            lineterminator="\n",
+            float_format=f"%.{config.RESPONSE_SIGNIFICANT_DIGITS}g",
+        )
 
     def get_list(self) -> list[SolutionList]:
         """
@@ -119,11 +122,30 @@ class SolutionRepository:
             ]
 
             if rolling_average_window_size > 1:
-                full_ts = full_ts.T.rolling(rolling_average_window_size).mean().T
+                full_ts = self.__compute_rolling_average(
+                    full_ts, rolling_average_window_size
+                )
 
             response.update({component: self.__dataframe_to_csv(full_ts)})
 
         return response
+
+    def __compute_rolling_average(
+        self, df: "pd.DataFrame | pd.Series[Any]", window_size: int
+    ) -> "pd.DataFrame | pd.Series[Any]":
+        if df.shape[0] == 0:
+            return df
+
+        # Append end of df to beginning
+        df = df[df.columns[-window_size:].to_list() + df.columns.to_list()]
+
+        # Compute rolling average
+        df = df.T.rolling(window_size).mean().dropna().T
+
+        # Rename columns so it starts at 0
+        df = df.set_axis(range(df.shape[1]), axis=1)
+
+        return df
 
     @cache
     def get_total(
@@ -161,7 +183,9 @@ class SolutionRepository:
                     component, scenario_name=scenario
                 )
             except KeyError:
-                raise HTTPException(status_code=404, detail=f"{component} not found in {solution_name}")
+                raise HTTPException(
+                    status_code=404, detail=f"{component} not found in {solution_name}"
+                )
 
             # Skip irrelevant rows in dataframes
             if type(total) is not pd.Series:
@@ -241,29 +265,9 @@ class SolutionRepository:
                 ]
 
             if rolling_average_window_size > 1:
-                current_col = balances[key]
-
-                if current_col.shape[0] == 0:
-                    continue
-
-                # Append end of df to beginning
-                current_col = current_col[
-                    current_col.columns[-rolling_average_window_size:].to_list()
-                    + current_col.columns.to_list()
-                ]
-
-                # Rename columns for proper rolling
-                current_col.columns = range(current_col.shape[1])
-
-                current_col = current_col.T
-                current_col = (
-                    current_col.rolling(rolling_average_window_size).mean().dropna().T
+                balances[key] = self.__compute_rolling_average(
+                    balances[key], rolling_average_window_size
                 )
-
-                # Rename columns again so it starts at 0
-                current_col.columns = range(current_col.shape[1])
-
-                balances[key] = current_col
 
         ans = {key: self.__dataframe_to_csv(val) for key, val in balances.items()}
 
