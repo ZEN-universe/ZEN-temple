@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.7.1 (2025-08-15)
+
+- Pass `convert_to_yearly_unit=True` argument to `results.get_unit`.
+
 ## 0.7.0 (2025-08-15)
 
 - Download multiple components at once for get_full_ts and get_total.
