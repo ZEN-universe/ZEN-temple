@@ -207,7 +207,7 @@ class SolutionRepository:
         Reads out the units of a component from the results object.
         """
         try:
-            unit = results.get_unit(component)
+            unit = results.get_unit(component, convert_to_yearly_unit=True)
             if type(unit) is str:
                 unit = pd.DataFrame({0: [unit]})
             return self.__dataframe_to_csv(unit)
