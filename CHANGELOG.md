@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.7.0 (2025-08-15)
+
+- Download multiple components at once for get_full_ts and get_total.
+- Define number of significant digits in the CSV responses.
+
 ## 0.6.2 (2025-06-21)
 
 - Fix no_open_browser option in CLI.
