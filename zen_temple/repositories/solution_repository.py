@@ -114,7 +114,7 @@ class SolutionRepository:
         for component in components:
             full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
             if full_ts.shape[0] == 0:
-                response.update({component: ""})
+                response.update({component: []})
                 continue
 
             full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
