@@ -77,7 +77,7 @@ async def get_energy_balance(
     scenario: Optional[str] = None,
     year: Optional[int] = 0,
     rolling_average_size: int = 1,
-) -> dict[str, str]:
+) -> dict[str, list[dict[str, Any]]]:
     """
     Get the energy balance of a specific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
     If no scenario and/or year is provided, the first one is taken.

@@ -165,6 +165,9 @@ class SolutionRepository:
 
         This design is analogous to TopoJSON's quantization scheme.
         """
+        if df.shape[0] == 0:
+            return []
+
         # Get index and data values
         index_names = df.index.names
         index_values = df.index.to_numpy()
@@ -275,7 +278,7 @@ class SolutionRepository:
         scenario: Optional[str] = None,
         year: Optional[int] = None,
         rolling_average_window_size: int = 1,
-    ) -> dict[str, str]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Returns the energy balance dataframes of a solution.
         It drops duplicates of all dataframes and removes the variables that only contain zeros.
@@ -320,7 +323,7 @@ class SolutionRepository:
                     balances[key], rolling_average_window_size
                 )
 
-        ans = {key: self.__dataframe_to_csv(val) for key, val in balances.items()}
+        ans = {key: self.__quantify_response(val) for key, val in balances.items()}
 
         return ans
 
