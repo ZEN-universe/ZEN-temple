@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import Query, APIRouter
 
@@ -47,7 +47,7 @@ async def get_full_ts(
     scenario: Optional[str] = None,
     year: Optional[int] = None,
     rolling_average_size: int = 1,
-) -> dict[str, Optional[str]]:
+) -> dict[str, Optional[list[dict[str, Any]] | str]]:
     """
     Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """

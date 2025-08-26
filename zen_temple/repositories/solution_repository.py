@@ -4,6 +4,7 @@ from os import walk
 from typing import Any, Optional
 
 import pandas as pd
+import numpy as np
 from fastapi import HTTPException
 from zen_garden.postprocess.results import Results  # type: ignore
 
@@ -83,7 +84,7 @@ class SolutionRepository:
         scenario: Optional[str] = None,
         year: Optional[int] = None,
         rolling_average_window_size: int = 1,
-    ) -> dict[str, Optional[str]]:
+    ) -> dict[str, Optional[list[dict[str, Any]] | str]]:
         """
         Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
 
@@ -105,10 +106,10 @@ class SolutionRepository:
                 else components[0]
             ),
         )
-        response = {"unit": unit}
+        response: dict[str, Optional[list[dict[str, Any]] | str]] = {"unit": unit}
 
         if year is None:
-            year = 0
+            year = results.get_analysis(scenario).earliest_year_of_data
 
         for component in components:
             full_ts = results.get_full_ts(component, scenario_name=scenario, year=year)
@@ -126,7 +127,8 @@ class SolutionRepository:
                     full_ts, rolling_average_window_size
                 )
 
-            response.update({component: self.__dataframe_to_csv(full_ts)})
+            res = self.__quantify_response(full_ts)
+            response[component] = res
 
         return response
 
@@ -146,6 +148,55 @@ class SolutionRepository:
         df = df.set_axis(range(df.shape[1]), axis=1)
 
         return df
+
+    def __quantify_response(self, df: "Any") -> list[dict[str, Any]]:
+        """
+        Converts a DataFrame or Series to a dictionary with quantized values.
+        Quantization is done by mapping the values of each row to the interval [0, quantile),
+        converting them to integers and delta encode them.
+
+        The response contains the transformation parameters `(translation, scale)`
+        such that we can reverse this process using:
+
+        ```
+        values = np.cumsum(values)
+        values = values * scale + translation
+        ```
+
+        This design is analogous to TopoJSON's quantization scheme.
+        """
+        # Get index and data values
+        index_names = df.index.names
+        index_values = df.index.to_numpy()
+        data_values = df.to_numpy()
+
+        # Compute min/max per row
+        min_values = data_values.min(axis=1)
+        max_values = data_values.max(axis=1)
+        diff_values = max_values - min_values
+
+        # Compute translation and scale parameters for mapping the value to [0, quantile)
+        translations = min_values
+        quantile = 10**(config.RESPONSE_SIGNIFICANT_DIGITS)
+        scales = (diff_values + config.EPS) / (quantile - 1)
+
+        # Apply translation and scaling
+        data_values = (data_values - translations[:, None]) / scales[:, None]
+
+        # Convert to int
+        data_values = data_values.astype(int)
+
+        # Delta encode values
+        data_values = np.diff(data_values, prepend=0)
+
+        return [
+            {
+                **dict(zip(index_names, idx)),
+                "d": row.tolist(),
+                "t": (translation, scale)
+            }
+            for idx, row, translation, scale in zip(index_values, data_values, translations, scales)
+        ]
 
     @cache
     def get_total(
