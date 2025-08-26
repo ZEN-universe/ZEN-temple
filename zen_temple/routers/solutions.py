@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import Query, APIRouter
 
@@ -47,7 +47,7 @@ async def get_full_ts(
     scenario: Optional[str] = None,
     year: Optional[int] = None,
     rolling_average_size: int = 1,
-) -> dict[str, Optional[str]]:
+) -> dict[str, Optional[list[dict[str, Any]] | str]]:
     """
     Get the total of a variable given the solution name, the variable name, and the scenario. If no scenario is provided, the first scenarios in the list is taken.
     """
@@ -77,7 +77,7 @@ async def get_energy_balance(
     scenario: Optional[str] = None,
     year: Optional[int] = 0,
     rolling_average_size: int = 1,
-) -> dict[str, str]:
+) -> dict[str, list[dict[str, Any]]]:
     """
     Get the energy balance of a specific node and carrier given the solution name, the node name, the carrier, the scenario, and the year.
     If no scenario and/or year is provided, the first one is taken.
