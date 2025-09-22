@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.7.2 (2025-09-22)
+
+- [Nodal, Storage] Quantify timeseries data to reduce network bandwidth.
+
 ## 0.7.1 (2025-08-15)
 
 - Pass `convert_to_yearly_unit=True` argument to `results.get_unit`.
