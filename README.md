@@ -1,6 +1,6 @@
-# ZEN Temple
+# ZEN-temple
 
-ZEN Temple is a FastAPI Application that provides a REST API to access results from ZEN-garden. It is used as a backend for [ZEN Explorer](https://github.com/ZEN-universe/ZEN-explorer).
+ZEN-temple is a FastAPI Application that provides a REST API to access results from [ZEN-garden](https://github.com/ZEN-universe/ZEN-garden). It is used as a backend for [ZEN-Explorer](https://github.com/ZEN-universe/ZEN-explorer).
 
 [![PyPI - Version](https://img.shields.io/pypi/v/zen-temple?logo=pypi&logoColor=fff&color=0375b5)](https://pypi.org/project/zen-temple/)
 ![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fgithub.com%2FZEN-universe%2FZEN-temple%2Fraw%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
@@ -58,15 +58,15 @@ python -m zen_temple.main --help
 
 ## 📤 Release workflow
 
-To create a new release of ZEN-temple follow the following steps. The idea is that for each major release (from `v0.4.x` to `v0.5.0`) we sync the version number of ZEN explorer and ZEN temple
+To create a new release of ZEN-temple follow the following steps. The idea is that for each major release (from `v0.4.x` to `v0.5.0`) we sync the version number of ZEN-explorer and ZEN-temple
 
-1. Bump version in ZEN explorer `bash scripts/bump_version.sh` and update its CHANGELOG.md.
+1. Bump version in ZEN-explorer `bash scripts/bump_version.sh` and update its CHANGELOG.md.
 2. Commit and upload the updated files to GitHub.
-3. Create a new release for ZEN explorer:
+3. Create a new release for ZEN-explorer:
    https://github.com/ZEN-universe/ZEN-explorer/releases/new
-4. Bump version in ZEN temple `bash scripts/bump_version.sh` and update [CHANGELOG.md](CHANGELOG.md).
+4. Bump version in ZEN-temple `bash scripts/bump_version.sh` and update [CHANGELOG.md](CHANGELOG.md).
 5. Commit and upload the updated files to GitHub.
-6. Create a new release for ZEN temple, e.g. `<version>`. For a pre-release also add a suffix `.dev1`, i.e. `<version>.dev1`, and mark the release as pre-release:
+6. Create a new release for ZEN-temple, e.g. `<version>`. For a pre-release also add a suffix `.dev1`, i.e. `<version>.dev1`, and mark the release as pre-release:
    https://github.com/ZEN-universe/ZEN-temple/releases/new
 7. (optional) Look at PyPI whether the new release has successfully been created:
    https://pypi.org/project/zen-temple/#history
