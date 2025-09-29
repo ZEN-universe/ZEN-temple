@@ -139,7 +139,7 @@ class SolutionRepository:
             return df
 
         # Append end of df to beginning
-        df = df[df.columns[-window_size:].to_list() + df.columns.to_list()]
+        df = df[df.columns[-window_size + 1 :].to_list() + df.columns.to_list()]
 
         # Compute rolling average
         df = df.T.rolling(window_size).mean().dropna().T
@@ -180,7 +180,7 @@ class SolutionRepository:
 
         # Compute translation and scale parameters for mapping the value to [0, quantile)
         translations = min_values
-        quantile = 10**(config.RESPONSE_SIGNIFICANT_DIGITS)
+        quantile = 10 ** (config.RESPONSE_SIGNIFICANT_DIGITS)
         scales = (diff_values + config.EPS) / (quantile - 1)
 
         # Apply translation and scaling
@@ -196,9 +196,11 @@ class SolutionRepository:
             {
                 **dict(zip(index_names, idx)),
                 "d": row.tolist(),
-                "t": (translation, scale)
+                "t": (translation, scale),
             }
-            for idx, row, translation, scale in zip(index_values, data_values, translations, scales)
+            for idx, row, translation, scale in zip(
+                index_values, data_values, translations, scales
+            )
         ]
 
     @cache
@@ -299,6 +301,17 @@ class SolutionRepository:
             results.get_energy_balance_dataframes(node, carrier, year, scenario)
         )
 
+        # Add dual of energy balance constraint
+        duals = results.get_dual(
+            "constraint_nodal_energy_balance", scenario_name=scenario, year=year
+        )
+        if duals is not None:
+            balances["constraint_nodal_energy_balance"] = duals.xs(
+                (carrier, node), level=("carrier", "node")
+            )
+        else:
+            balances["constraint_nodal_energy_balance"] = pd.Series(dtype=float)
+
         # Drop duplicates of all dataframes
         balances = {
             key: val[~val.index.duplicated(keep="first")]
@@ -323,6 +336,7 @@ class SolutionRepository:
                     balances[key], rolling_average_window_size
                 )
 
+        # Quantify all dataframes
         ans = {key: self.__quantify_response(val) for key, val in balances.items()}
 
         return ans
