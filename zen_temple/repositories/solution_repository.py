@@ -8,6 +8,7 @@ import numpy as np
 from fastapi import HTTPException
 from zen_garden.postprocess.results import Results  # type: ignore
 
+from zen_temple.errors import InvalidSolutionFolderError
 from zen_temple.utils import get_variable_name
 
 from ..config import config
@@ -26,6 +27,10 @@ class SolutionRepository:
         :return: Results object of the solution.
         """
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
+        if not os.path.exists(path) or not os.path.isdir(path):
+            raise HTTPException(
+                status_code=404, detail=f"Solution {solution_name} not found"
+            )
         return Results(path)
 
     def __dataframe_to_csv(self, df: "pd.DataFrame | pd.Series[Any]") -> str:
@@ -56,7 +61,11 @@ class SolutionRepository:
         for folder in solutions_folders:
             try:
                 ans.append(SolutionList.from_path(folder))
-            except (FileNotFoundError, NotADirectoryError) as e:
+            except (
+                FileNotFoundError,
+                NotADirectoryError,
+                InvalidSolutionFolderError,
+            ) as e:
                 print(str(e) + f" - Skip {folder}")
                 continue
         return ans

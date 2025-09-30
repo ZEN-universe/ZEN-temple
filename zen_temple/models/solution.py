@@ -10,6 +10,7 @@ from zen_garden.postprocess.results import Results  # type: ignore
 from zen_temple.utils import get_variable_name
 
 from ..config import config
+from ..errors import InvalidSolutionFolderError
 
 
 class ScenarioDetail(BaseModel):
@@ -127,6 +128,10 @@ class SolutionList(BaseModel):
 
         :param path: Path to the results folder.
         """
+        # If the subfolder "energy_system" exists, we are in a model folder
+        if os.path.exists(os.path.join(path, "energy_system")):
+            raise InvalidSolutionFolderError()
+
         with open(os.path.join(path, "scenarios.json"), "r") as f:
             scenarios_json: dict[str, Any] = json.load(f)
 
@@ -172,4 +177,3 @@ class SolutionList(BaseModel):
         solution = SolutionList(**system)
 
         return solution
-

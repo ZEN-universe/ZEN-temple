@@ -1,0 +1,2 @@
+class InvalidSolutionFolderError(Exception):
+    pass
