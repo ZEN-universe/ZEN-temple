@@ -1,5 +1,11 @@
 ## Changelog
 
+## 0.7.3 (2025-10-02)
+
+- Check whether corresponding scenario folders exist when loading solutions list.
+- Skip model folders and show user-friendly error when loading results for a non-existing solution.
+- [Nodal] Add duals to energy balance response.
+
 ## 0.7.2 (2025-09-22)
 
 - [Nodal, Storage] Quantify timeseries data to reduce network bandwidth.
