@@ -38,8 +38,8 @@ class SolutionDetail(BaseModel):
     @staticmethod
     def from_path(path: str) -> "SolutionDetail":
         """
-        Generator that instanciates a SolutionDetail given the path of a solution.
-        It creates a Solution-instance of ZEN Gardens soluion class and extracts the necessary dataframes from this soultion.
+        Generator that instantiates a SolutionDetail given the path of a solution.
+        It creates a Solution-instance of ZEN Gardens solution class and extracts the necessary dataframes from this solution.
 
         :param path: Path to the results folder.
         """
@@ -132,38 +132,34 @@ class SolutionList(BaseModel):
         if os.path.exists(os.path.join(path, "energy_system")):
             raise InvalidSolutionFolderError()
 
+        # Parse scenarios.json
         with open(os.path.join(path, "scenarios.json"), "r") as f:
             scenarios_json: dict[str, Any] = json.load(f)
 
-        scenarios = list(scenarios_json.keys())
+        # List all scenarios that have a corresponding folder
+        scenarios = [
+            key
+            for key in scenarios_json.keys()
+            if os.path.isdir(os.path.join(path, f"scenario_{key}"))
+        ]
 
-        scenario_name = ""
+        # Find first scenario folder
+        # TODO This must be more flexible for different scenario types, e.g. when subscenarios exist
+        if len(scenarios) == 0:
+            scenario_name = ""
+        elif scenarios_json[scenarios[0]]["sub_folder"] == "":
+            scenario_name = f"scenario_{scenarios[0]}"
+        else:
+            scenario_name = f"scenario_{scenarios[0]}/scenario_{scenarios_json[scenarios[0]]['sub_folder']}"
 
-        # TODO I think this needs to be more flexible for the different scenario types -> if subscenarios exist or not
-        # TODO this is a quick fix for the current scenario structure
-        if len(scenarios_json) > 1:
-            first_scenario_name = scenarios[0]
-            if scenarios_json[first_scenario_name]["sub_folder"] != "":
-                scenario_name = (
-                    "scenario_"
-                    + scenarios_json[first_scenario_name]["base_scenario"]
-                    + "/"
-                    + "scenario_"
-                    + scenarios_json[first_scenario_name]["sub_folder"]
-                )
-            else:
-                scenario_name = (
-                    "scenario_" + scenarios_json[first_scenario_name]["base_scenario"]
-                )
-
+        # Parse system.json
         with open(os.path.join(path, scenario_name, "system.json")) as f:
             system: dict[str, Any] = json.load(f)
 
+        # Get relative path to solution folder
         relative_folder = path.replace(config.SOLUTION_FOLDER, "")
-
         if relative_folder[0] == "/":
             relative_folder = relative_folder[1:]
-
         system["folder_name"] = relative_folder
 
         # TODO this can change with the scenarios - it should be scenario dependent
