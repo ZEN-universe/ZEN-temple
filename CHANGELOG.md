@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.7.4 (2025-10-15)
+
+- Update import of ZEN-garden's `default_config` to new location.
+
 ## 0.7.3 (2025-10-02)
 
 - Check whether corresponding scenario folders exist when loading solutions list.
