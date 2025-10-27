@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.7.5 (2025-10-27)
+
+- Update ZEN-explorer to v0.7.6.
+
 ## 0.7.4 (2025-10-15)
 
 - Update import of ZEN-garden's `default_config` to new location.
