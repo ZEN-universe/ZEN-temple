@@ -84,7 +84,7 @@ class SolutionRepository:
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         return SolutionDetail.from_path(path)
 
-    @cache
+    # @cache
     def get_full_ts(
         self,
         solution_name: str,
@@ -212,7 +212,7 @@ class SolutionRepository:
             )
         ]
 
-    @cache
+    # @cache
     def get_total(
         self,
         solution_name: str,
@@ -280,7 +280,7 @@ class SolutionRepository:
             print(e)
             return None
 
-    @cache
+    # @cache
     def get_energy_balance(
         self,
         solution_name: str,
