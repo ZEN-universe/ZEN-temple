@@ -34,6 +34,7 @@ class SolutionDetail(BaseModel):
     folder_name: str
     scenarios: dict[str, ScenarioDetail]
     version: str
+    objective: str
 
     @staticmethod
     def from_path(path: str) -> "SolutionDetail":
@@ -99,11 +100,16 @@ class SolutionDetail(BaseModel):
         if version is None:
             version = "0.0.0"
 
+        objective = results.get_analysis().objective
+        if objective is None:
+            objective = ""
+
         return SolutionDetail(
             name=name,
             folder_name=str(relative_path),
             scenarios=scenario_details,
             version=version,
+            objective=objective,
         )
 
 
