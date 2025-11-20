@@ -1,5 +1,11 @@
 ## Changelog
 
+## 0.8.0 (2025-11-20)
+
+- Add objective to SolutionDetail.
+- Temporarily disable caching until we find a better solution.
+- Update ZEN-explorer to v0.8.0, which appears now in an overall new design.
+
 ## 0.7.5 (2025-10-27)
 
 - Update ZEN-explorer to v0.7.6.
