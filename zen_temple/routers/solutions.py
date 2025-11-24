@@ -4,6 +4,7 @@ from fastapi import Query, APIRouter
 
 from ..models.solution import SolutionDetail, SolutionList
 from ..repositories.solution_repository import solution_repository
+from ..config import config
 
 router = APIRouter(prefix="/solutions", tags=["Solutions"])
 
@@ -85,3 +86,31 @@ async def get_energy_balance(
     return solution_repository.get_energy_balance(
         solution_name, node_name, carrier_name, scenario, year, rolling_average_size
     )
+
+@router.get("/cache-stats")
+async def get_cache_stats() -> dict[str, Any]:
+    """
+    Get statistics about the solution cache.
+    """
+    if not config.is_debug():
+        raise Exception("Cache stats are only available in debug mode.")
+    methods = [
+        "get_detail",
+        "get_full_ts",
+        "get_total",
+        "get_unit",
+        "get_energy_balance",
+    ]
+    stats = {}
+    for method_name in methods:
+        method = getattr(solution_repository, method_name, None)
+        if method is None or not hasattr(method, "cache_info"):
+            continue
+        cache_info = method.cache_info()
+        stats[method_name] = {
+            "hits": cache_info.hits,
+            "misses": cache_info.misses,
+            "maxsize": cache_info.maxsize,
+            "currsize": cache_info.currsize,
+        }
+    return stats

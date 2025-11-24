@@ -1,7 +1,7 @@
 import os
 import webbrowser
 from pathlib import Path
-from argparse import ArgumentParser
+from argparse import ArgumentParser, BooleanOptionalAction
 
 import uvicorn
 from fastapi import FastAPI
@@ -39,6 +39,7 @@ def start_server(
     solution_folder: str,
     port: int,
     app_name: str | None = None,
+    debug: bool | None = None,
     api_url: str | None = None,
     significant_digits: int | None = None,
     reload: bool = False,
@@ -51,6 +52,8 @@ def start_server(
         app_name = ""
 
     config.SOLUTION_FOLDER = solution_folder
+    if debug is not None:
+        config.APP_DEBUG = debug
     if significant_digits is not None:
         config.RESPONSE_SIGNIFICANT_DIGITS = significant_digits
 
@@ -127,6 +130,13 @@ def parse_arguments_and_run() -> None:
         help="name of the app",
     )
     group.add_argument(
+        "--debug",
+        required=False,
+        default=None,
+        action=BooleanOptionalAction,
+        help="enable/disable debug mode",
+    )
+    group.add_argument(
         "--api-url",
         required=False,
         type=str,
@@ -160,6 +170,7 @@ def parse_arguments_and_run() -> None:
         outputs_folder,
         args.port,
         app_name=args.app_name,
+        debug=args.debug,
         api_url=args.api_url,
         significant_digits=args.significant_digits,
         reload=args.reload,
