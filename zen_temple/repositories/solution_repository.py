@@ -1,6 +1,6 @@
 import os
-from functools import cache
 from os import walk
+from functools import lru_cache
 from typing import Any, Optional
 
 import pandas as pd
@@ -70,7 +70,7 @@ class SolutionRepository:
                 continue
         return ans
 
-    @cache
+    @lru_cache(maxsize=128, typed=True)
     def get_detail(self, solution_name: str) -> SolutionDetail:
         """
         Returns the SolutionDetail of a solution given its name.
@@ -84,7 +84,7 @@ class SolutionRepository:
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         return SolutionDetail.from_path(path)
 
-    # @cache
+    @lru_cache(maxsize=16, typed=True)
     def get_full_ts(
         self,
         solution_name: str,
@@ -212,7 +212,7 @@ class SolutionRepository:
             )
         ]
 
-    # @cache
+    @lru_cache(maxsize=32, typed=True)
     def get_total(
         self,
         solution_name: str,
@@ -259,6 +259,7 @@ class SolutionRepository:
 
         return response
 
+    @lru_cache(maxsize=128, typed=True)
     def get_unit(self, solution_name: str, component: str) -> Optional[str]:
         """
         Returns the unit of a component given the solution name. If there are several units in the requested component, it returns it in form of a CSV string.
@@ -280,7 +281,7 @@ class SolutionRepository:
             print(e)
             return None
 
-    # @cache
+    @lru_cache(maxsize=32, typed=True)
     def get_energy_balance(
         self,
         solution_name: str,

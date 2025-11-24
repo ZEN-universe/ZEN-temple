@@ -20,7 +20,6 @@ classifiers = [
 dependencies = [
     "uvicorn",
     "fastapi[standard]",
-    "fastapi-cache2",
     "python-dotenv",
     "zen-garden",
     "mypy>=1.14.1",
