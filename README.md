@@ -28,7 +28,7 @@ Perform the following steps to install ZEN-temple:
 1. Create a new conda environment, activate it, and install all dependencies:
 
    ```bash
-   conda create --name <your-env-name> python==3.12
+   conda create --name <your-env-name> python==3.13
    conda activate <your-env-name>
    pip install -e .[mypy]
    ```
