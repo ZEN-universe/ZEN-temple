@@ -1,10 +1,12 @@
 ## Changelog
 
-## 0.8.0 (2025-11-20)
+## 0.8.0 (2025-11-24)
 
 - Add objective to SolutionDetail.
-- Temporarily disable caching until we find a better solution.
+- Use LRU cache with appropriate max_size for caching solution details.
+- Create debug mode with endpoint to get cache statistics.
 - Update ZEN-explorer to v0.8.0, which appears now in an overall new design.
+- Test ZEN-temple with Python 3.13.
 
 ## 0.7.5 (2025-10-27)
 
