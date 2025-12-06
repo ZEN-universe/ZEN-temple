@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .routers import solutions
+from .routers import solution_router
 from .config import config
 
 # Initialize default app
@@ -24,7 +24,7 @@ app.add_middleware(
 
 # Initialize api app
 api_app = FastAPI()
-api_app.include_router(solutions.router)
+api_app.include_router(solution_router.router)
 app.mount("/api", api_app)
 
 # Mount explorer as static files
