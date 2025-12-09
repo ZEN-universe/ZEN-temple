@@ -15,14 +15,22 @@ class SolutionRepository:
     Repository for accessing solution data.
     This class provides methods to access various data related to a solution,
     such as units, totals, full time series, and energy balances.
-    
+
     :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
     :param scenario_name: Name of the scenario. If skipped, the first scenario is taken.
+    :param carrier: Name of the carrier to filter by. If skipped, no filtering is applied.
     """
 
-    def __init__(self, solution_name: str, scenario_name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        solution_name: str,
+        scenario_name: Optional[str] = None,
+        carrier: Optional[str] = None,
+    ) -> None:
         self.solution_name = solution_name
         self.scenario_name = scenario_name
+        self.carrier = carrier
+        self.reference_technologies: Optional[list[str]] = None
 
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         if not os.path.exists(path) or not os.path.isdir(path):
@@ -57,6 +65,9 @@ class SolutionRepository:
             component, scenario_name=self.scenario_name
         )
 
+        # Filter by carrier if specified
+        total = self.__filter_by_carrier(total)
+
         # Skip irrelevant rows in dataframes
         if type(total) is not pd.Series:
             total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
@@ -83,9 +94,14 @@ class SolutionRepository:
         if full_ts.shape[0] == 0:
             return []
 
+        # Filter by carrier if specified
+        full_ts = self.__filter_by_carrier(full_ts)
+
+        # Skip irrelevant rows
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
         full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
 
+        # Apply rolling average
         if rolling_average_window_size > 1:
             full_ts = self.__compute_rolling_average(
                 full_ts, rolling_average_window_size
@@ -164,6 +180,54 @@ class SolutionRepository:
         Returns the analysis object for the current scenario.
         """
         return self.results.get_analysis(self.scenario_name)
+
+    def __filter_by_carrier(
+        self,
+        df: "pd.DataFrame | pd.Series[Any]",
+    ) -> "pd.DataFrame | pd.Series[Any]":
+        """
+        Filters the dataframe or series by carrier if specified.
+
+        :param df: The DataFrame or Series to filter.
+        :param carrier: The carrier to filter by.
+        """
+        if self.carrier is None:
+            return df
+
+        if "carrier" in df.index.names:
+            return df.loc[df.index.get_level_values("carrier") == self.carrier]
+
+        if "technology" in df.index.names:
+            reference_technologies = self.__get_reference_technologies()
+            return df.loc[
+                df.index.get_level_values("technology").isin(reference_technologies)
+            ]
+
+        print("Warning: Cannot filter by carrier, no 'carrier' or 'technology' index level found.")
+
+        return df
+
+    def __get_reference_technologies(self) -> list[str]:
+        """
+        Returns the list of reference technologies for the current carrier.
+        """
+        if self.carrier is None:
+            return []
+
+        if self.reference_technologies is not None:
+            return self.reference_technologies
+
+        reference_carriers = self.results.get_df(
+            "set_reference_carriers", scenario_name=self.scenario_name
+        )
+        reference_technologies = reference_carriers[
+            reference_carriers == self.carrier
+        ].index.tolist()
+
+        # Ensure the result is always a list of strings
+        reference_technologies_str = [str(tech) for tech in reference_technologies]
+        self.reference_technologies = reference_technologies_str
+        return reference_technologies_str
 
     def __compute_rolling_average(
         self, df: "pd.DataFrame | pd.Series[Any]", window_size: int

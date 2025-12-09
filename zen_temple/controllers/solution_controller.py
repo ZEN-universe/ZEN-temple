@@ -63,7 +63,7 @@ def get_unit(solution_name: str, component: str) -> Optional[str]:
     If there are several units in the requested component,
     it returns it in form of a CSV string.
 
-    :param solution_name: Name of the solution. 
+    :param solution_name: Name of the solution.
         Dots will be regarded as subfolders (foo.bar => foo/bar).
     """
     return SolutionRepository(solution_name).get_unit(component)
@@ -75,6 +75,7 @@ def get_total(
     components_str: str,
     unit_component: Optional[str] = None,
     scenario: Optional[str] = None,
+    carrier: Optional[str] = None,
 ) -> dict[str, Optional[str]]:
     """
     Returns the total and the unit for a list of components.
@@ -93,10 +94,11 @@ def get_total(
     if unit_component is None or unit_component == "":
         unit_component = components[0]
 
-    repository = SolutionRepository(solution_name, scenario)
-    unit = repository.get_unit(unit_component)
+    repository = SolutionRepository(solution_name, scenario, carrier)
 
+    unit = repository.get_unit(unit_component)
     response = {"unit": unit}
+
     for component in components:
         response[component] = repository.get_total(component)
 
@@ -111,6 +113,7 @@ def get_full_ts(
     scenario_name: Optional[str] = None,
     year: Optional[int] = None,
     rolling_average_window_size: int = 1,
+    carrier: Optional[str] = None,
 ) -> dict[str, Optional[list[dict[str, Any]] | str]]:
     """
     Returns the full ts and the unit for a list of components.
@@ -133,7 +136,7 @@ def get_full_ts(
     if unit_component is None or unit_component == "":
         unit_component = components[0]
 
-    repository = SolutionRepository(solution_name, scenario_name)
+    repository = SolutionRepository(solution_name, scenario_name, carrier)
 
     unit = repository.get_unit(unit_component)
     response: dict[str, Optional[list[dict[str, Any]] | str]] = {"unit": unit}

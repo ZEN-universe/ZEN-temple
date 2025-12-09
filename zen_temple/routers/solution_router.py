@@ -39,8 +39,9 @@ async def total(
     components: str,
     unit_component: Optional[str] = None,
     scenario: Optional[str] = None,
+    carrier: Optional[str] = None,
 ) -> dict[str, Optional[str]]:
-    return get_total(solution_name, components, unit_component, scenario)
+    return get_total(solution_name, components, unit_component, scenario, carrier)
 
 
 @router.get("/full_ts")
@@ -51,6 +52,7 @@ async def full_ts(
     scenario_name: Optional[str] = None,
     year: Optional[int] = None,
     rolling_average_window_size: int = 1,
+    carrier: Optional[str] = None,
 ) -> dict[str, Optional[list[dict[str, Any]] | str]]:
     return get_full_ts(
         solution_name,
@@ -59,6 +61,7 @@ async def full_ts(
         scenario_name,
         year,
         rolling_average_window_size,
+        carrier,
     )
 
 
