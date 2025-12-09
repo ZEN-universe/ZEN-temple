@@ -61,12 +61,13 @@ class SolutionRepository:
 
         :param component: Name of the component.
         """
-        total: pd.DataFrame | pd.Series[Any] = self.results.get_total(
-            component, scenario_name=self.scenario_name
-        )
+        # Build index for filtering by carrier if specified
+        index = self.__build_index_for_carrier(component)
 
-        # Filter by carrier if specified
-        total = self.__filter_by_carrier(total)
+        # Get total
+        total: pd.DataFrame | pd.Series[Any] = self.results.get_total(
+            component, scenario_name=self.scenario_name, index=index
+        )
 
         # Skip irrelevant rows in dataframes
         if type(total) is not pd.Series:
@@ -88,14 +89,15 @@ class SolutionRepository:
         :param scenario: Name of the scenario. If skipped, the first scenario is taken.
         :param year: The year of the ts. If skipped, the first year is taken.
         """
+        # Build index for filtering by carrier if specified
+        index = self.__build_index_for_carrier(component)
+
+        # Get full time series
         full_ts = self.results.get_full_ts(
-            component, scenario_name=self.scenario_name, year=year
+            component, scenario_name=self.scenario_name, year=year, index=index
         )
         if full_ts.shape[0] == 0:
             return []
-
-        # Filter by carrier if specified
-        full_ts = self.__filter_by_carrier(full_ts)
 
         # Skip irrelevant rows
         full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
@@ -181,31 +183,30 @@ class SolutionRepository:
         """
         return self.results.get_analysis(self.scenario_name)
 
-    def __filter_by_carrier(
-        self,
-        df: "pd.DataFrame | pd.Series[Any]",
-    ) -> "pd.DataFrame | pd.Series[Any]":
+    def __build_index_for_carrier(
+        self, component: str
+    ) -> Optional[dict[str, str | list[str]]]:
         """
-        Filters the dataframe or series by carrier if specified.
+        Builds an index for filtering by carrier if specified.
 
-        :param df: The DataFrame or Series to filter.
-        :param carrier: The carrier to filter by.
+        :param component: Name of the component.
         """
         if self.carrier is None:
-            return df
+            return None
 
-        if "carrier" in df.index.names:
-            return df.loc[df.index.get_level_values("carrier") == self.carrier]
+        index_names = self.results.get_index_names(component, self.scenario_name)
 
-        if "technology" in df.index.names:
+        if "carrier" in index_names:
+            return {"carrier": self.carrier}
+
+        if "technology" in index_names:
             reference_technologies = self.__get_reference_technologies()
-            return df.loc[
-                df.index.get_level_values("technology").isin(reference_technologies)
-            ]
+            return {"technology": reference_technologies}
 
-        print("Warning: Cannot filter by carrier, no 'carrier' or 'technology' index level found.")
-
-        return df
+        print(
+            "Warning: Cannot filter by carrier, no 'carrier' or 'technology' index level found."
+        )
+        return None
 
     def __get_reference_technologies(self) -> list[str]:
         """
