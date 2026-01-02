@@ -183,6 +183,12 @@ class SolutionRepository:
         """
         return self.results.get_analysis(self.scenario_name)
 
+    def get_scenario_names(self) -> list[str]:
+        """
+        Returns the list of available scenarios for the current solution.
+        """
+        return list(self.results.solution_loader.scenarios.keys())
+
     def __build_index_for_carrier(
         self, component: str
     ) -> Optional[dict[str, str | list[str]]]:

@@ -10,6 +10,32 @@ from ..models.solution_list import SolutionList
 from ..repositories.solution_repository import SolutionRepository
 
 
+def verify_scenario_name(
+    repository: SolutionRepository,
+    solution_name: str,
+    scenario_name: Optional[str],
+) -> None:
+    """
+    Verifies that the provided scenario name exists in the solution repository.
+
+    :param repository: The solution repository.
+    :param solution_name: Name of the solution.
+    :param scenario_name: Name of the scenario.
+
+    :raises HTTPException: If the scenario name does not exist.
+    """
+    if scenario_name is None:
+        return
+
+    available_scenarios = repository.get_scenario_names()
+    if scenario_name not in available_scenarios:
+        scenario_names = ", ".join(available_scenarios)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Scenario '{scenario_name}' does not exist for solution '{solution_name}'. Available scenarios: {scenario_names}.",
+        )
+
+
 def get_list() -> list[SolutionList]:
     """
     Creates a list of `Solution`-objects of all solutions that are contained
@@ -91,10 +117,12 @@ def get_total(
     if len(components) == 0:
         raise HTTPException(status_code=400, detail="No components provided!")
 
+    repository = SolutionRepository(solution_name, scenario, carrier)
+
+    verify_scenario_name(repository, solution_name, scenario)
+
     if unit_component is None or unit_component == "":
         unit_component = components[0]
-
-    repository = SolutionRepository(solution_name, scenario, carrier)
 
     unit = repository.get_unit(unit_component)
     response = {"unit": unit}
@@ -128,15 +156,16 @@ def get_full_ts(
     :param year: The year of the ts. If skipped, the first year is taken.
     :param rolling_average_window_size: Size of the rolling average window.
     """
-
     components = [x for x in components_str.split(",") if x != ""]
     if len(components) == 0:
         raise HTTPException(status_code=400, detail="No components provided!")
 
+    repository = SolutionRepository(solution_name, scenario_name, carrier)
+
+    verify_scenario_name(repository, solution_name, scenario_name)
+
     if unit_component is None or unit_component == "":
         unit_component = components[0]
-
-    repository = SolutionRepository(solution_name, scenario_name, carrier)
 
     unit = repository.get_unit(unit_component)
     response: dict[str, Optional[list[dict[str, Any]] | str]] = {"unit": unit}
