@@ -1,5 +1,14 @@
 ## Changelog
 
+## 0.9.0 (2026-01-05)
+
+- Refactor: move controller logic out of repository.
+- Add carrier filter to the endpoints `full_ts` and `total`.
+- Use ZEN-garden's index parameter to filter by carriers.
+- Validate scenario_name.
+- Disable ZEN-garden's cache to reduce memory usage.
+- [total] Return empty string when dataframe is empty.
+
 ## 0.8.0 (2025-11-24)
 
 - Add objective to SolutionDetail.
