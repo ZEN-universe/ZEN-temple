@@ -37,7 +37,7 @@ class SolutionRepository:
             raise HTTPException(
                 status_code=404, detail=f"Solution {solution_name} not found"
             )
-        self.results = Results(path)
+        self.results = Results(path, enable_cache=False)
 
     def get_unit(self, component: str) -> Optional[str]:
         """

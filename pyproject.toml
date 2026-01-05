@@ -21,7 +21,7 @@ dependencies = [
     "uvicorn",
     "fastapi[standard]",
     "python-dotenv",
-    "zen-garden>=2.7.16",
+    "zen-garden>=2.8.6",
     "mypy>=1.14.1",
 ]
 

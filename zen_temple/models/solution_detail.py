@@ -27,7 +27,7 @@ class SolutionDetail(BaseModel):
         """
         name = os.path.split(path)[-1]
         relative_path = os.path.relpath(path, start=config.SOLUTION_FOLDER)
-        results = Results(path)
+        results = Results(path, enable_cache=False)
         results_version = results.get_analysis().zen_garden_version
         scenario_details = {}
 
