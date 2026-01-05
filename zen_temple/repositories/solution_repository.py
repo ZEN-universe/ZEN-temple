@@ -70,7 +70,7 @@ class SolutionRepository:
         )
 
         # Skip irrelevant rows in dataframes
-        if type(total) is not pd.Series:
+        if type(total) is not pd.Series and not total.empty:
             total = total.loc[(abs(total) > config.EPS * max(total)).any(axis=1)]
 
         return self.__dataframe_to_csv(total)
@@ -317,6 +317,8 @@ class SolutionRepository:
         """
         Converts a DataFrame or Series to a CSV string.
         """
+        if df.empty:
+            return ""
         return df.to_csv(
             lineterminator="\n",
             float_format=f"%.{config.RESPONSE_SIGNIFICANT_DIGITS}g",
