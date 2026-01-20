@@ -46,14 +46,10 @@ class SolutionRepository:
 
         :param component: Name of the component.
         """
-        try:
-            unit = self.results.get_unit(component, convert_to_yearly_unit=True)
-            if type(unit) is str:
-                unit = pd.DataFrame({0: [unit]})
-            return self.__dataframe_to_csv(unit)
-        except Exception as e:
-            print(e)
-            return None
+        unit = self.results.get_unit(component, convert_to_yearly_unit=True)
+        if type(unit) is str:
+            unit = pd.DataFrame({0: [unit]})
+        return self.__dataframe_to_csv(unit)
 
     def get_total(self, component: str) -> Optional[str]:
         """
