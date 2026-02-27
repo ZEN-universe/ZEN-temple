@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.9.2 (2026-02-27)
+
+- Update ZEN-explorer to version 0.9.3.
+
 ## 0.9.0 (2026-01-05)
 
 - Refactor: move controller logic out of repository.
