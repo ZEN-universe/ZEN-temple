@@ -1,13 +1,13 @@
-from fastapi import HTTPException
-import numpy as np
 import os
-import pandas as pd
 from typing import Any, Optional
-from zen_garden.postprocess.results import Results  # type: ignore
+
+import numpy as np
+import pandas as pd
+from fastapi import HTTPException
 from zen_garden.default_config import Analysis  # type: ignore
+from zen_garden.postprocess.results import Results  # type: ignore
 
 from ..config import config
-from ..versions import get_variable_name
 
 
 class SolutionRepository:
@@ -19,6 +19,9 @@ class SolutionRepository:
     :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
     :param scenario_name: Name of the scenario. If skipped, the first scenario is taken.
     :param carrier: Name of the carrier to filter by. If skipped, no filtering is applied.
+    :param node: Name of the node to filter by. If skipped, no filtering is applied.
+    :param year: The year of the time series. If skipped, the first year is taken.
+    :param rolling_average_window_size: Size of the rolling average window. If skipped, no rolling average is applied.
     """
 
     def __init__(
@@ -26,10 +29,16 @@ class SolutionRepository:
         solution_name: str,
         scenario_name: Optional[str] = None,
         carrier: Optional[str] = None,
+        node: Optional[str] = None,
+        year: Optional[int] = None,
+        rolling_average_window_size: int = 1,
     ) -> None:
         self.solution_name = solution_name
         self.scenario_name = scenario_name
         self.carrier = carrier
+        self.year = year
+        self.rolling_average_window_size = rolling_average_window_size
+        self.node = node
         self.reference_technologies: Optional[list[str]] = None
 
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
@@ -39,7 +48,7 @@ class SolutionRepository:
             )
         self.results = Results(path, enable_cache=False)
 
-    def get_unit(self, component: str) -> Optional[str]:
+    def get_unit(self, component: str) -> str:
         """
         Returns the unit of a component for the current solution.
         If there are several units in the requested component, it returns it in form of a CSV string.
@@ -58,7 +67,7 @@ class SolutionRepository:
         :param component: Name of the component.
         """
         # Build index for filtering by carrier if specified
-        index = self.__build_index_for_carrier(component)
+        index = self.__build_index_for_carrier_and_node(component)
 
         # Get total
         total: pd.DataFrame | pd.Series[Any] = self.results.get_total(
@@ -74,110 +83,101 @@ class SolutionRepository:
     def get_full_ts(
         self,
         component: str,
-        year: int,
-        rolling_average_window_size: int,
-    ) -> Optional[list[dict[str, Any]] | str]:
+        factor: int = 1,
+    ) -> list[dict[str, Any]]:
         """
         Returns the full ts and the unit of a component given the solution name, the component name and the scenario name.
 
         :param solution_name: Name of the solution. Dots will be regarded as subfolders (foo.bar => foo/bar).
         :param component: Name of the component.
-        :param scenario: Name of the scenario. If skipped, the first scenario is taken.
-        :param year: The year of the ts. If skipped, the first year is taken.
+        :param factor: Factor to multiply the values with. If skipped, no multiplication is applied.
         """
         # Build index for filtering by carrier if specified
-        index = self.__build_index_for_carrier(component)
+        index = self.__build_index_for_carrier_and_node(component)
 
         # Get full time series
         full_ts = self.results.get_full_ts(
-            component, scenario_name=self.scenario_name, year=year, index=index
+            component, scenario_name=self.scenario_name, year=self.year, index=index
         )
         if full_ts.shape[0] == 0:
             return []
 
-        # Skip irrelevant rows
-        full_ts = full_ts[~full_ts.index.duplicated(keep="first")]
-        full_ts = full_ts.loc[(abs(full_ts) > config.EPS * max(full_ts)).any(axis=1)]
-
-        # Apply rolling average
-        if rolling_average_window_size > 1:
-            full_ts = self.__compute_rolling_average(
-                full_ts, rolling_average_window_size
-            )
-
+        full_ts = self.__skip_irrelevant_rows(full_ts)
+        full_ts = full_ts * factor
+        full_ts = self.__compute_rolling_average(full_ts)
         return self.__quantify_response(full_ts)
 
-    def get_energy_balance(
-        self,
-        node: str,
-        carrier: str,
-        year: Optional[int] = None,
-        rolling_average_window_size: int = 1,
-    ) -> dict[str, list[dict[str, Any]]]:
+    def get_transport_flows(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """
-        Returns the energy balance dataframes of a solution.
-        It drops duplicates of all dataframes and removes the variables that only contain zeros.
-
-        :param node: The name of the node.
-        :param carrier: The name of the carrier.
-        :param year: The desired year. If skipped, the first year is taken.
-        :param rolling_average_window_size: Size of the rolling average window.
+        Returns the transport flows in and out of a node for a given year and rolling average window size.
+        The transport flows out of the node are negated, so that positive values always indicate an increase of the carrier at the node.
+        The transport flows in the node are computed as the transport flows into the node minus the transport losses at the node, if available.
         """
-        if year is None:
-            year = 0
+        # Build index for filtering by carrier and node
+        index = self.__build_index_for_carrier_and_node("flow_transport")
 
-        balances: dict[str, pd.DataFrame | pd.Series[Any]] = (
-            self.results.get_energy_balance_dataframes(
-                node, carrier, year, self.scenario_name
-            )
-        )
-
-        # Add dual of energy balance constraint
-        duals = self.results.get_dual(
-            "constraint_nodal_energy_balance",
+        # Get flow transport and flow transport loss dataframes
+        flow_transport = self.results.get_full_ts(
+            "flow_transport",
             scenario_name=self.scenario_name,
-            year=year,
+            year=self.year,
+            index=index,
         )
-        if duals is not None:
-            balances["constraint_nodal_energy_balance"] = duals.xs(
-                (carrier, node), level=("carrier", "node")
-            )
+        flow_transport_loss = self.results.get_full_ts(
+            "flow_transport_loss",
+            scenario_name=self.scenario_name,
+            year=self.year,
+            index=index,
+        )
+        if flow_transport.empty:
+            return [], []
+
+        # Compute transport out: all transport flows going out the of the node
+        transport_out = self.__filter_by_edges(flow_transport, "out")
+        transport_out = transport_out.multiply(-1)
+        transport_out = self.__compute_rolling_average(transport_out)
+        transport_out = self.__quantify_response(transport_out)
+
+        # Compute transport in: all transport flows going into the node minus the transport losses
+        if not flow_transport_loss.empty:
+            transport_in = flow_transport - flow_transport_loss
+            transport_in = self.__filter_by_edges(transport_in, "in")
+            transport_in = self.__compute_rolling_average(transport_in)
+            transport_in = self.__quantify_response(transport_in)
         else:
-            balances["constraint_nodal_energy_balance"] = pd.Series(dtype=float)
+            transport_in = []
 
-        # Drop duplicates of all dataframes
-        balances = {
-            key: val[~val.index.duplicated(keep="first")]
-            for key, val in balances.items()
-        }
+        return transport_in, transport_out
 
-        # Drop variables that only contain zeros (except for demand)
-        demand_name = get_variable_name(
-            "demand", self.results.get_analysis().zen_garden_version
+    def get_dual(self, component: str) -> list[dict[str, Any]]:
+        """
+        Returns the dual values for a given component.
+
+        :param component: Name of the component.
+        """
+        # Build index for filtering by carrier and node
+        index = self.__build_index_for_carrier_and_node(component)
+
+        # Get dual dataframe
+        dual = self.results.get_dual(
+            component, self.scenario_name, self.year, index=index
         )
-        for key, series in balances.items():
-            if type(series) is not pd.Series and key != demand_name:
-                if series.empty:
-                    continue
-                balances[key] = series.loc[
-                    (abs(series) > config.EPS * max(series)).any(axis=1)
-                ]
+        if dual is None:
+            return []
 
-            if rolling_average_window_size > 1:
-                balances[key] = self.__compute_rolling_average(
-                    balances[key], rolling_average_window_size
-                )
+        # Filter and quantify response
+        dual = self.__skip_irrelevant_rows(dual)
+        return self.__quantify_response(dual)
 
-        # Quantify all dataframes
-        ans = {key: self.__quantify_response(val) for key, val in balances.items()}
-
-        return ans
-
-    def get_analysis(self) -> Analysis:
+    def set_earliest_year_of_data(self):
         """
-        Returns the analysis object for the current scenario.
+        Sets the earliest year of data for the current scenario to the earliest year available in the results.
         """
-        return self.results.get_analysis(self.scenario_name)
+        earliest_year = self.results.get_analysis(
+            self.scenario_name
+        ).earliest_year_of_data
+        if earliest_year is not None:
+            self.year = int(earliest_year)
 
     def get_scenario_names(self) -> list[str]:
         """
@@ -185,7 +185,38 @@ class SolutionRepository:
         """
         return list(self.results.solution_loader.scenarios.keys())
 
-    def __build_index_for_carrier(
+    def __skip_irrelevant_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter out rows that are either duplicates or only contain zeros (up to a certain epsilon) in all columns.
+
+        :param df: The dataframe to filter.
+        """
+        # Drop duplicates
+        df = df.drop_duplicates()
+        # Drop variables that only contain zeros
+        df = df.loc[(abs(df) > config.EPS * max(df)).any(axis=1)]
+        return df
+
+    def __filter_by_edges(self, df: pd.DataFrame, direction: str) -> pd.DataFrame:
+        """
+        Filters the given data by the edges columns for the given node and direction.
+
+        :param df: The dataframe to filter. It is expected to have a MultiIndex
+            with the second level containing the edge names.
+        :param direction: The direction of the transport flow to filter by.
+            It can be either "in" or "out". "in" will filter for edges where the node is the destination,
+            while "out" will filter for edges where the node is the source.
+        """
+        if self.node is None:
+            return df
+        idx = 0 if direction == "out" else 1
+        edges = self.results.get_df("set_nodes_on_edges", self.scenario_name)
+        edges = [
+            edge for edge, nodes in edges.items() if nodes.split(",")[idx] == self.node
+        ]
+        return df.loc[(slice(None), edges), :]
+
+    def __build_index_for_carrier_and_node(
         self, component: str
     ) -> Optional[dict[str, str | list[str]]]:
         """
@@ -193,22 +224,30 @@ class SolutionRepository:
 
         :param component: Name of the component.
         """
-        if self.carrier is None:
+        if self.carrier is None and self.node is None:
             return None
 
         index_names = self.results.get_index_names(component, self.scenario_name)
+        index = {}
 
-        if "carrier" in index_names:
-            return {"carrier": self.carrier}
+        if self.node is not None and "node" in index_names:
+            index["node"] = self.node
+        elif self.node is not None:
+            print(
+                f"Warning: Cannot filter by node {self.node}: no 'node' index level for component {component} found.",
+            )
 
-        if "technology" in index_names:
+        if self.carrier is not None and "carrier" in index_names:
+            index["carrier"] = self.carrier
+        elif self.carrier is not None and "technology" in index_names:
             reference_technologies = self.__get_reference_technologies()
-            return {"technology": reference_technologies}
+            index["technology"] = reference_technologies
+        elif self.carrier is not None:
+            print(
+                f"Warning: Cannot filter by carrier {self.carrier}: no 'carrier' or 'technology' index level for component {component} found."
+            )
 
-        print(
-            "Warning: Cannot filter by carrier, no 'carrier' or 'technology' index level found."
-        )
-        return None
+        return index
 
     def __get_reference_technologies(self) -> list[str]:
         """
@@ -233,7 +272,7 @@ class SolutionRepository:
         return reference_technologies_str
 
     def __compute_rolling_average(
-        self, df: "pd.DataFrame | pd.Series[Any]", window_size: int
+        self, df: "pd.DataFrame | pd.Series[Any]"
     ) -> "pd.DataFrame | pd.Series[Any]":
         """
         Computes the rolling average of a DataFrame or Series with wrap-around.
@@ -241,14 +280,17 @@ class SolutionRepository:
         :param df: The DataFrame or Series to compute the rolling average of.
         :param window_size: The size of the rolling average window.
         """
-        if df.shape[0] == 0:
+        if df.shape[0] == 0 or self.rolling_average_window_size <= 1:
             return df
 
         # Append end of df to beginning
-        df = df[df.columns[-window_size + 1 :].to_list() + df.columns.to_list()]
+        df = df[
+            df.columns[-self.rolling_average_window_size + 1 :].to_list()
+            + df.columns.to_list()
+        ]
 
         # Compute rolling average
-        df = df.T.rolling(window_size).mean().dropna().T
+        df = df.T.rolling(self.rolling_average_window_size).mean().dropna().T
 
         # Rename columns so it starts at 0
         df = df.set_axis(range(df.shape[1]), axis=1)

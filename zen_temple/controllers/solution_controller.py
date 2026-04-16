@@ -1,7 +1,8 @@
-from fastapi import HTTPException
-from functools import lru_cache
 import os
+from functools import lru_cache
 from typing import Any, Optional
+
+from fastapi import HTTPException
 
 from ..config import config
 from ..errors import InvalidSolutionFolderError
@@ -142,7 +143,7 @@ def get_full_ts(
     year: Optional[int] = None,
     rolling_average_window_size: int = 1,
     carrier: Optional[str] = None,
-) -> dict[str, Optional[list[dict[str, Any]] | str]]:
+) -> dict[str, list[dict[str, Any]] | str]:
     """
     Returns the full ts and the unit for a list of components.
 
@@ -160,23 +161,27 @@ def get_full_ts(
     if len(components) == 0:
         raise HTTPException(status_code=400, detail="No components provided!")
 
-    repository = SolutionRepository(solution_name, scenario_name, carrier)
+    repository = SolutionRepository(
+        solution_name,
+        scenario_name,
+        carrier,
+        None,
+        year,
+        rolling_average_window_size,
+    )
 
     verify_scenario_name(repository, solution_name, scenario_name)
+    if year is None:
+        repository.set_earliest_year_of_data()
 
     if unit_component is None or unit_component == "":
         unit_component = components[0]
-
     unit = repository.get_unit(unit_component)
-    response: dict[str, Optional[list[dict[str, Any]] | str]] = {"unit": unit}
 
-    if year is None:
-        year = repository.get_analysis().earliest_year_of_data
+    response: dict[str, list[dict[str, Any]] | str] = {"unit": unit}
 
     for component in components:
-        response[component] = repository.get_full_ts(
-            component, year, rolling_average_window_size
-        )
+        response[component] = repository.get_full_ts(component)
 
     return response
 
@@ -204,6 +209,39 @@ def get_energy_balance(
     :param year: The desired year. If skipped, the first year is taken.
     :param rolling_average_window_size: Size of the rolling average window.
     """
-    return SolutionRepository(solution_name, scenario_name).get_energy_balance(
-        node, carrier, year, rolling_average_window_size
+    # Initialize repository and verify scenario name
+    repository = SolutionRepository(
+        solution_name, scenario_name, carrier, node, year, rolling_average_window_size
     )
+
+    verify_scenario_name(repository, solution_name, scenario_name)
+    if year is None:
+        repository.set_earliest_year_of_data()
+
+    response: dict[str, list[dict[str, Any]]] = {}
+
+    # Load base components
+    components_with_factors = {
+        "flow_conversion_output": 1,
+        "flow_conversion_input": -1,
+        "flow_export": -1,
+        "flow_import": 1,
+        "flow_storage_charge": -1,
+        "flow_storage_discharge": 1,
+        "demand": 1,
+        "shed_demand": 1,
+    }
+    for component, factor in components_with_factors.items():
+        response[component] = repository.get_full_ts(component, factor)
+
+    # Transport flows
+    transport_in, transport_out = repository.get_transport_flows()
+    response["flow_transport_in"] = transport_in
+    response["flow_transport_out"] = transport_out
+
+    # Duals
+    response["constraint_nodal_energy_balance"] = repository.get_dual(
+        "constraint_nodal_energy_balance"
+    )
+
+    return response

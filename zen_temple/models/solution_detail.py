@@ -1,10 +1,12 @@
 import os
+
 from pydantic import BaseModel
 from zen_garden.postprocess.results import Results  # type: ignore
 
-from .scenario_detail import ScenarioDetail
 from ..config import config
 from ..versions import get_variable_name
+from .scenario_detail import ScenarioDetail
+
 
 class SolutionDetail(BaseModel):
     """
@@ -53,28 +55,21 @@ class SolutionDetail(BaseModel):
                 scenario_name=scenario_name,
             )
 
-            edges_dict = edges.to_dict()
             carriers_input_dict = {
-                key: val.split(",") for key, val in df_input_carriers.to_dict().items()
+                key: [v for v in val.split(",") if v != ""]
+                for key, val in df_input_carriers.to_dict().items()
             }
             carriers_output_dict = {
-                key: val.split(",") for key, val in df_output_carriers.to_dict().items()
+                key: [v for v in val.split(",") if v != ""]
+                for key, val in df_output_carriers.to_dict().items()
             }
-
-            for key in carriers_output_dict:
-                if carriers_output_dict[key] == [""]:
-                    carriers_output_dict[key] = []
-
-            for key in carriers_input_dict:
-                if carriers_input_dict[key] == [""]:
-                    carriers_input_dict[key] = []
 
             scenario_details[scenario_name] = ScenarioDetail(
                 system=system,
                 reference_carrier=reference_carriers,
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,
-                edges=edges_dict,
+                edges=edges.to_dict(),
             )
 
         version = results.get_analysis().zen_garden_version
