@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.9.3 (2026-04-22)
+
+- Update ZEN-explorer to version 0.9.6.
+- Move logic to compute energy balance to ZEN-temple.
+
 ## 0.9.2 (2026-02-27)
 
 - Update ZEN-explorer to version 0.9.3.
