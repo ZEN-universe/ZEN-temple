@@ -1,0 +1,206 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - edited
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Release workflow
+# - If there are commits since the last release, create a new PR.
+# - The PR's description will be part of the next version's description in CHANGELOG.md.
+# - Once the PR is merged, a new release will be created with the version number from the PR title and the description from the PR body.
+# - It also creates a new tag with the version number from the PR title.
+# - Version number are in the format vX.Y.Z, where X is the major version, Y is the minor version, and Z is the patch version. By default, we create patches.
+# - The PR's title contains the next version number. It has the format "Release vX.Y.Z" where vX.Y.Z. is the next version number to be used for the release.
+jobs:
+  has-changes-since-last-release:
+    name: Check for changes since last release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Fetch all history to get all tags
+
+      - name: Check for changes since last release
+        id: check
+        run: |
+          # Get the latest tag
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $latest_tag"
+
+          # Check if there are any commits since the latest tag
+          if git log $latest_tag..HEAD --oneline | grep -q .; then
+            echo "There are changes since the last release."
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes since the last release."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+  create-release-pr:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    needs: has-changes-since-last-release
+    if: needs.has-changes-since-last-release.outputs.has_changes == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Fetch all history to get all tags
+
+      - name: Determine next version number
+        id: version
+        run: |
+          # Get the latest tag
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $latest_tag"
+
+          # Extract the version number from the tag
+          version=${latest_tag#v}
+          echo "Current version: $version"
+
+          # Split the version into major, minor, and patch
+          IFS='.' read -r major minor patch <<< "$version"
+
+          # Increment the patch version
+          patch=$((patch + 1))
+
+          # Construct the next version number and store it for later steps
+          next_version="v$major.$minor.$patch"
+          echo "Next version: $next_version"
+          echo "next_version=$next_version" >> $GITHUB_OUTPUT
+
+      - name: Generate CHANGELOG message
+        id: message
+        run: |
+          # Get the commit messages since the last tag
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "Latest tag: $latest_tag"
+
+          # Get the commit messages since the last tag
+          commits=$(git log $latest_tag..HEAD --pretty=format:"- %s" --no-merges)
+          echo "Commits since last tag:"
+          echo "$commits"
+
+          # Store the commit messages for later steps
+          echo "changelog_message<<EOF" >> $GITHUB_OUTPUT
+          echo "$commits" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Bump package.json using npm
+        run: |
+          version="${{ steps.version.outputs.next_version }}"
+          version="${version#v}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$version\"/" package.json
+          npm install
+
+      - name: Update CHANGELOG.md
+        run: |
+          # Construct heading and the changelog message
+          date=$(date +%Y-%m-%d)
+          heading="## ${{ steps.version.outputs.next_version }} ($date)"
+          message="${{ steps.message.outputs.changelog_message }}"
+
+          # Update CHANGELOG.md with the new version and description
+          git checkout origin/main -- CHANGELOG.md
+          tmp=$(mktemp)
+          awk -v heading="$heading" -v message="$message" 'NR==3{ print heading "\n\n" message "\n" }1' CHANGELOG.md > "$tmp" && mv "$tmp" CHANGELOG.md
+
+      - name: Create Release PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "Release ${{ steps.version.outputs.next_version }}"
+          title: "Release ${{ steps.version.outputs.next_version }}"
+          body: "${{ steps.message.outputs.changelog_message }}"
+          base: main
+          branch: "release/${{ steps.version.outputs.next_version }}"
+          labels: release
+          sign-commits: true
+
+  # whenever the release PR's title or description is updated, update the package.json version and the CHANGELOG.md file with the new version and description
+  update-release-pr:
+    name: Update Release PR
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'edited' && contains(github.event.pull_request.labels.*.name, 'release')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Fetch all history to get all tags
+          ref: ${{ github.event.pull_request.head.ref }} # Checkout the PR branch
+
+      - name: Update package.json version and CHANGELOG.md
+        run: |
+          # Get the PR title and body
+          pr_title="${{ github.event.pull_request.title }}"
+          pr_body="${{ github.event.pull_request.body }}"
+
+          # Extract the version number from the PR title
+          # The PR title is in the format "Release vX.Y.Z"
+          version=${pr_title#Release }
+          echo "Extracted version: $version"
+          if [[ ! $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: PR title does not contain a valid version number in the format 'Release vX.Y.Z'"
+            exit 1
+          fi
+
+          # Update package.json with the new version
+          raw_version=${version#v}
+          sed -i "s/\"version\": \".*\"/\"version\": \"$raw_version\"/" package.json
+          npm install
+
+          # Update CHANGELOG.md with the new version and description (possibly multi-line)
+          changelog_message="${{ github.event.pull_request.body }}"
+          git checkout origin/main -- CHANGELOG.md
+          tmp=$(mktemp)
+          awk -v version="$version" -v message="$changelog_message" 'NR==3{
+            print "## " version " (" strftime("%Y-%m-%d") ")\n\n" message "\n"
+          }1' CHANGELOG.md > "$tmp" && mv "$tmp" CHANGELOG.md
+
+          # Setup git user for committing the changes
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Commit the changes to package.json, package-lock.json, and CHANGELOG.md
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "Update package.json version and CHANGELOG.md for $version"
+          git push
+
+  publish:
+    name: Publish Release
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Derive release metadata
+        id: release_meta
+        run: |
+          title="${{ github.event.pull_request.title }}"
+          tag="${title#Release }"
+          release_name="${{ github.event.repository.name }}@${title#Release v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "release_name=$release_name" >> "$GITHUB_OUTPUT"
+
+      - name: Create release to be reviewed and published manually
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: "${{ steps.release_meta.outputs.tag }}"
+          name: "${{ steps.release_meta.outputs.release_name }}"
+          body: ${{ github.event.pull_request.body }}
+          generate_release_notes: true
+          draft: true
+          prerelease: true
