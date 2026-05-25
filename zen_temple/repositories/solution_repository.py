@@ -4,8 +4,7 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from fastapi import HTTPException
-from zen_garden.default_config import Analysis  # type: ignore
-from zen_garden.postprocess.results import Results  # type: ignore
+from zen_garden.postprocess.results import Results  # type: ignore[import-untyped]
 
 from ..config import config
 
@@ -133,21 +132,21 @@ class SolutionRepository:
             return [], []
 
         # Compute transport out: all transport flows going out the of the node
-        transport_out = self.__filter_by_edges(flow_transport, "out")
-        transport_out = transport_out.multiply(-1)
-        transport_out = self.__compute_rolling_average(transport_out)
-        transport_out = self.__quantify_response(transport_out)
+        transport_out_df = self.__filter_by_edges(flow_transport, "out")
+        transport_out_df = transport_out_df.multiply(-1)
+        transport_out_df = self.__compute_rolling_average(transport_out_df)
+        transport_out_response = self.__quantify_response(transport_out_df)
 
         # Compute transport in: all transport flows going into the node minus the transport losses
         if not flow_transport_loss.empty:
-            transport_in = flow_transport - flow_transport_loss
-            transport_in = self.__filter_by_edges(transport_in, "in")
-            transport_in = self.__compute_rolling_average(transport_in)
-            transport_in = self.__quantify_response(transport_in)
+            transport_in_df = flow_transport - flow_transport_loss
+            transport_in_df = self.__filter_by_edges(transport_in_df, "in")
+            transport_in_df = self.__compute_rolling_average(transport_in_df)
+            transport_in_response = self.__quantify_response(transport_in_df)
         else:
-            transport_in = []
+            transport_in_response = []
 
-        return transport_in, transport_out
+        return transport_in_response, transport_out_response
 
     def get_dual(self, component: str) -> list[dict[str, Any]]:
         """
@@ -169,7 +168,7 @@ class SolutionRepository:
         dual = self.__skip_irrelevant_rows(dual)
         return self.__quantify_response(dual)
 
-    def set_earliest_year_of_data(self):
+    def set_earliest_year_of_data(self) -> None:
         """
         Sets the earliest year of data for the current scenario to the earliest year available in the results.
         """
@@ -194,7 +193,8 @@ class SolutionRepository:
         # Drop duplicates
         df = df.drop_duplicates()
         # Drop variables that only contain zeros
-        df = df.loc[(abs(df) > config.EPS * max(df)).any(axis=1)]
+        max_values = df.max()
+        df = df.loc[(abs(df) > config.EPS * max_values).any(axis=1)]
         return df
 
     def __filter_by_edges(self, df: pd.DataFrame, direction: str) -> pd.DataFrame:
@@ -228,7 +228,7 @@ class SolutionRepository:
             return None
 
         index_names = self.results.get_index_names(component, self.scenario_name)
-        index = {}
+        index: dict[str, str | list[str]] = {}
 
         if self.node is not None and "node" in index_names:
             index["node"] = self.node
@@ -272,8 +272,8 @@ class SolutionRepository:
         return reference_technologies_str
 
     def __compute_rolling_average(
-        self, df: "pd.DataFrame | pd.Series[Any]"
-    ) -> "pd.DataFrame | pd.Series[Any]":
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
         """
         Computes the rolling average of a DataFrame or Series with wrap-around.
 

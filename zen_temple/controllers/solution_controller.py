@@ -126,7 +126,7 @@ def get_total(
         unit_component = components[0]
 
     unit = repository.get_unit(unit_component)
-    response = {"unit": unit}
+    response: dict[str, Optional[str]] = {"unit": unit}
 
     for component in components:
         response[component] = repository.get_total(component)

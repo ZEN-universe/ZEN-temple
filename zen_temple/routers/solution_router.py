@@ -53,7 +53,7 @@ async def full_ts(
     year: Optional[int] = None,
     rolling_average_window_size: int = 1,
     carrier: Optional[str] = None,
-) -> dict[str, Optional[list[dict[str, Any]] | str]]:
+) -> dict[str, list[dict[str, Any]] | str]:
     return get_full_ts(
         solution_name,
         components,
