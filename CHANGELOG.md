@@ -1,5 +1,11 @@
 ## Changelog
 
+## v0.9.4.dev4 (2026-06-04)
+
+- Fix mypy type errors.
+- Add new release workflow via GitHub Actions and PRs.
+- Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
+
 ## 0.9.4 (2026-04-22)
 
 - Update ZEN-explorer to version 0.9.6.
