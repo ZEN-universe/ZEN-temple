@@ -99,12 +99,11 @@ jobs:
           echo "$commits" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Bump package.json using npm
+      - name: Bump version in pyproject.toml
         run: |
           version="${{ steps.version.outputs.next_version }}"
           version="${version#v}"
-          sed -i "s/\"version\": \".*\"/\"version\": \"$version\"/" package.json
-          npm install
+          sed -i "s/version = \".*\"/version = \"$version\"/" pyproject.toml
 
       - name: Update CHANGELOG.md
         run: |
@@ -156,10 +155,9 @@ jobs:
             exit 1
           fi
 
-          # Update package.json with the new version
+          # Update pyproject.toml with the new version
           raw_version=${version#v}
-          sed -i "s/\"version\": \".*\"/\"version\": \"$raw_version\"/" package.json
-          npm install
+          sed -i "s/version = \".*\"/version = \"$raw_version\"/" pyproject.toml
 
           # Update CHANGELOG.md with the new version and description (possibly multi-line)
           changelog_message="${{ github.event.pull_request.body }}"
@@ -174,9 +172,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Commit the changes to package.json, package-lock.json, and CHANGELOG.md
-          git add package.json package-lock.json CHANGELOG.md
-          git commit -m "Update package.json version and CHANGELOG.md for $version"
-          git push
+          git add pyproject.toml CHANGELOG.md
+          git commit -m "Update pyproject.toml version and CHANGELOG.md for $version" --amend
+          git push --force-with-lease
 
   publish:
     name: Publish Release
