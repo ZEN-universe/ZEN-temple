@@ -21,7 +21,9 @@ jobs:
           node-version: "22.x"
 
       - name: Set up ImageMagick and ffmpeg
-        run: sudo apt install imagemagick ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install imagemagick ffmpeg
 
       - name: Install dependencies
         run: npm install
