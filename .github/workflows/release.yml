@@ -87,7 +87,7 @@ jobs:
           fi
 
           # Construct the next version number and store it for later steps
-          next_version="v$major.$minor.$patch"
+          next_version="v$major.$minor.$patch.$dev"
           echo "Next version: $next_version"
           echo "next_version=$next_version" >> $GITHUB_OUTPUT
 
