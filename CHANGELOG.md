@@ -2,6 +2,12 @@
 
 ## v0.9.4.dev5 (2026-06-04)
 
+- Release v0.9.4.dev5
+- Run apt-get update before installing imagemagick and ffmpeg.
+- Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
+
+## v0.9.4.dev5 (2026-06-04)
+
 - Run apt-get update before installing imagemagick and ffmpeg.
 - Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
 
