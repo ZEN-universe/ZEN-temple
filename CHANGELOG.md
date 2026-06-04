@@ -1,5 +1,11 @@
 ## Changelog
 
+## v0.9.4.dev3 (2026-06-04)
+
+- [Release] Update pyproject.toml instead of package.json.
+- Fix mypy type errors.
+- Add new release workflow via GitHub Actions and PRs.
+
 ## 0.9.4 (2026-04-22)
 
 - Update ZEN-explorer to version 0.9.6.
