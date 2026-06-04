@@ -71,8 +71,8 @@ jobs:
           version=${latest_tag#v}
           echo "Current version: $version"
 
-          # Split the version into major, minor, and patch
-          IFS='.' read -r major minor patch <<< "$version"
+          # Split the version into major, minor, patch, and optional development suffix
+          IFS='.' read -r major minor patch dev <<< "$version"
 
           # Increment the patch version
           patch=$((patch + 1))
@@ -177,7 +177,7 @@ jobs:
           git push --force-with-lease
 
   publish:
-    name: Publish Release
+    name: Publish Pre-Release
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
     runs-on: ubuntu-latest
     steps:
@@ -188,8 +188,8 @@ jobs:
         id: release_meta
         run: |
           title="${{ github.event.pull_request.title }}"
-          tag="${title#Release }"
-          release_name="${{ github.event.repository.name }}@${title#Release v}"
+          tag="${title#Release }.dev1"
+          release_name="${{ github.event.repository.name }}@${title#Release v}.dev1"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "release_name=$release_name" >> "$GITHUB_OUTPUT"
 
