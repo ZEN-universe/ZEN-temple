@@ -2,6 +2,20 @@
 
 ## v0.9.4.dev4 (2026-06-04)
 
+- Update pyproject.toml version and CHANGELOG.md for v0.9.4.dev4
+- Fix check that PR version has correct format.
+- Add note of zen-explorer version to PR body.
+- Add information about latest ZEN-explorer version to changelog automatically.
+- Add dev suffix to version number.
+- Create pre-releases per default with dev-suffix.
+- Respect development tags in version numbers.
+- [Release] Update pyproject.toml instead of package.json.
+- Fix mypy type errors.
+- Add new release workflow via GitHub Actions and PRs.
+- Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
+
+## v0.9.4.dev4 (2026-06-04)
+
 - Fix mypy type errors.
 - Add new release workflow via GitHub Actions and PRs.
 - Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
