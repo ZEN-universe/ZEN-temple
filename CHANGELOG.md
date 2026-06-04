@@ -1,5 +1,13 @@
 ## Changelog
 
+## v0.9.4 (2026-06-04)
+
+- Create pre-releases per default with dev-suffix.
+- Respect development tags in version numbers.
+- [Release] Update pyproject.toml instead of package.json.
+- Fix mypy type errors.
+- Add new release workflow via GitHub Actions and PRs.
+
 ## 0.9.4 (2026-04-22)
 
 - Update ZEN-explorer to version 0.9.6.
