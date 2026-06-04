@@ -121,10 +121,16 @@ jobs:
           heading="## ${{ steps.version.outputs.next_version }} ($date)"
           message="${{ steps.message.outputs.changelog_message }}"
 
+          # Fetch latest version of ZEN-explorer from the repository
+          zen_explorer_version=$(curl -s https://api.github.com/repos/ZEN-universe/ZEN-explorer/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+
+          # Add a note about updating ZEN-explorer to the new version
+          update_zen_explorer="- Update ZEN-explorer to [version ${zen_explorer_version}](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v${zen_explorer_version})"
+
           # Update CHANGELOG.md with the new version and description
           git checkout origin/main -- CHANGELOG.md
           tmp=$(mktemp)
-          awk -v heading="$heading" -v message="$message" 'NR==3{ print heading "\n\n" message "\n" }1' CHANGELOG.md > "$tmp" && mv "$tmp" CHANGELOG.md
+          awk -v heading="$heading" -v message="$message" -v update_zen_explorer="$update_zen_explorer" 'NR==3{ print heading "\n\n" message update_zen_explorer "\n\n" }1' CHANGELOG.md > "$tmp" && mv "$tmp" CHANGELOG.md
 
       - name: Create Release PR
         uses: peter-evans/create-pull-request@v8
@@ -137,7 +143,7 @@ jobs:
           labels: release
           sign-commits: true
 
-  # whenever the release PR's title or description is updated, update the package.json version and the CHANGELOG.md file with the new version and description
+  # whenever the release PR's title or description is updated, update the pyproject.toml version and the CHANGELOG.md file with the new version and description
   update-release-pr:
     name: Update Release PR
     runs-on: ubuntu-latest
@@ -149,7 +155,7 @@ jobs:
           fetch-depth: 0 # Fetch all history to get all tags
           ref: ${{ github.event.pull_request.head.ref }} # Checkout the PR branch
 
-      - name: Update package.json version and CHANGELOG.md
+      - name: Update pyproject.toml version and CHANGELOG.md
         run: |
           # Get the PR title and body
           pr_title="${{ github.event.pull_request.title }}"
@@ -180,7 +186,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Commit the changes to package.json, package-lock.json, and CHANGELOG.md
+          # Commit the changes to pyproject.toml, package-lock.json, and CHANGELOG.md
           git add pyproject.toml CHANGELOG.md
           git commit -m "Update pyproject.toml version and CHANGELOG.md for $version" --amend
           git push --force-with-lease
