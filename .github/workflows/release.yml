@@ -74,8 +74,17 @@ jobs:
           # Split the version into major, minor, patch, and optional development suffix
           IFS='.' read -r major minor patch dev <<< "$version"
 
-          # Increment the patch version
-          patch=$((patch + 1))
+          # Increment the patch or dev version
+          if [ -n $dev ]; then
+            # If there is a development suffix, increment it
+            dev_number=${dev#dev}
+            dev_number=$((dev_number + 1))
+            dev="dev$dev_number"
+          else
+            # If there is no development suffix, increment the patch version and add a development suffix
+            dev="dev1"
+            patch=$((patch + 1))
+          fi
 
           # Construct the next version number and store it for later steps
           next_version="v$major.$minor.$patch"
@@ -188,8 +197,8 @@ jobs:
         id: release_meta
         run: |
           title="${{ github.event.pull_request.title }}"
-          tag="${title#Release }.dev1"
-          release_name="${{ github.event.repository.name }}@${title#Release v}.dev1"
+          tag="${title#Release }"
+          release_name="${{ github.event.repository.name }}@${title#Release v}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "release_name=$release_name" >> "$GITHUB_OUTPUT"
 
