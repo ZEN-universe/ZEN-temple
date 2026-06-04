@@ -160,11 +160,11 @@ jobs:
           pr_body="${{ github.event.pull_request.body }}"
 
           # Extract the version number from the PR title
-          # The PR title is in the format "Release vX.Y.Z"
+          # The PR title is in the format "Release vX.Y.Z[.devN]", where vX.Y.Z is the version number and .devN is an optional development suffix.
           version=${pr_title#Release }
           echo "Extracted version: $version"
-          if [[ ! $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Error: PR title does not contain a valid version number in the format 'Release vX.Y.Z'"
+          if [[ ! $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
+            echo "Error: PR title does not contain a valid version number in the format 'Release vX.Y.Z[.devN]'."
             exit 1
           fi
 
