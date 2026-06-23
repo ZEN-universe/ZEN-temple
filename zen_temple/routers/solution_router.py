@@ -1,12 +1,12 @@
 from typing import Any, Optional
+
 from fastapi import APIRouter
 
-from ..config import config
 from ..controllers.solution_controller import (
-    get_list,
     get_detail,
     get_energy_balance,
     get_full_ts,
+    get_list,
     get_total,
     get_unit,
 )

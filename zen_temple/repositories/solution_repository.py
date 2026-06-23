@@ -271,9 +271,7 @@ class SolutionRepository:
         self.reference_technologies = reference_technologies_str
         return reference_technologies_str
 
-    def __compute_rolling_average(
-        self, df: pd.DataFrame
-    ) -> pd.DataFrame:
+    def __compute_rolling_average(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Computes the rolling average of a DataFrame or Series with wrap-around.
 

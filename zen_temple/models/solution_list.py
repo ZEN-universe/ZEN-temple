@@ -1,11 +1,13 @@
 import json
 import os
 from pathlib import Path
-from pydantic import BaseModel, Field
 from typing import Any
 
-from ..errors import InvalidSolutionFolderError
+from pydantic import BaseModel, Field
+
 from ..config import config
+from ..errors import InvalidSolutionFolderError
+
 
 class SolutionList(BaseModel):
     """

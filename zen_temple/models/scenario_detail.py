@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from zen_garden.default_config import System  # type: ignore
 
+
 class ScenarioDetail(BaseModel):
     """
     ScenarioDetail is the model that includes all the detail information of a scenario. It also contains the System-information from ZEN Garden.

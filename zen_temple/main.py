@@ -1,15 +1,15 @@
 import os
 import webbrowser
-from pathlib import Path
 from argparse import ArgumentParser, BooleanOptionalAction
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .routers import solution_router
 from .config import config
+from .routers import solution_router
 
 # Initialize default app
 app = FastAPI()
@@ -66,7 +66,14 @@ def start_server(
     # Start the uvicorn server
     if not no_open_browser:
         webbrowser.open(f"http://localhost:{port}/", new=2)
-    uvicorn.run("zen_temple.main:app", host="localhost", port=port, log_level="info", reload=reload, fd=fd)
+    uvicorn.run(
+        "zen_temple.main:app",
+        host="localhost",
+        port=port,
+        log_level="info",
+        reload=reload,
+        fd=fd,
+    )
 
 
 def find_outputs_folder(outputs_folder: str | None) -> str:

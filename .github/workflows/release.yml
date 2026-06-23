@@ -174,6 +174,7 @@ jobs:
 
           # Update CHANGELOG.md with the new version and description (possibly multi-line)
           changelog_message="${{ github.event.pull_request.body }}"
+          changelog_message=$(echo "$changelog_message" | sed 's/\r$//')
           git checkout origin/main -- CHANGELOG.md
           tmp=$(mktemp)
           awk -v version="$version" -v message="$changelog_message" 'NR==3{
