@@ -1,26 +1,5 @@
 ## Changelog
 
-## v0.9.4.dev6 (2026-06-23)
-
-- Replace DOS line endings with UNIX ones when updating changelog in the CI.
-- Update ZEN-explorer to [version 0.9.9](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.9).
-
-## v0.9.4.dev5 (2026-06-04)
-
-- Run apt-get update before installing imagemagick and ffmpeg.
-- Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
-
-## v0.9.4.dev4 (2026-06-04)
-
-- Fix mypy type errors.
-- Add new release workflow via GitHub Actions and PRs.
-- Update ZEN-explorer to [version 0.9.8](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.8).
-
-## 0.9.4 (2026-04-22)
-
-- Update ZEN-explorer to version 0.9.6.
-- Move logic to compute energy balance to ZEN-temple.
-
 ## 0.9.3 (2026-03-31)
 
 - Update ZEN-explorer to version 0.9.5.
