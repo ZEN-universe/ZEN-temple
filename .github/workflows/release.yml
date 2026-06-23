@@ -21,10 +21,31 @@ permissions:
 # - Version number are in the format vX.Y.Z, where X is the major version, Y is the minor version, and Z is the patch version. By default, we create patches.
 # - The PR's title contains the next version number. It has the format "Release vX.Y.Z" where vX.Y.Z. is the next version number to be used for the release.
 jobs:
+  check-release-trigger:
+    name: Check trigger type
+    runs-on: ubuntu-latest
+    outputs:
+      is_release_merge: ${{ steps.check.outputs.is_release_merge }}
+    steps:
+      - id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" && \
+                "${{ github.event.action }}" == "closed" && \
+                "${{ github.event.pull_request.merged }}" == "true" && \
+                "${{ contains(github.event.pull_request.labels.*.name, 'release') }}" == "true" ]]; then
+            echo "is_release_merge=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release_merge=false" >> $GITHUB_OUTPUT
+          fi
+
   has-changes-since-last-release:
     name: Check for changes since last release
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check-release-trigger
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.check-release-trigger.outputs.is_release_merge == 'false'
     outputs:
       has_changes: ${{ steps.check.outputs.has_changes }}
     steps:
@@ -145,7 +166,10 @@ jobs:
   update-release-pr:
     name: Update Release PR
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'edited' && contains(github.event.pull_request.labels.*.name, 'release')
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.action == 'edited' &&
+      contains(github.event.pull_request.labels.*.name, 'release')
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -192,7 +216,8 @@ jobs:
 
   publish:
     name: Publish Pre-Release
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    needs: check-release-trigger
+    if: needs.check-release-trigger.outputs.is_release_merge == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
