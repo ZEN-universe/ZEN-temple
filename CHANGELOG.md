@@ -1,5 +1,12 @@
 ## Changelog
 
+## v0.9.4 (2026-06-23)
+
+- Add new release workflow via GitHub Actions and PRs.
+- Install imagemagick and ffmpeg to build ZEN-explorer.
+- Move logic to compute energy balance from ZEN-garden.
+- Update ZEN-explorer to [version 0.9.9](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.9).
+
 ## 0.9.3 (2026-03-31)
 
 - Update ZEN-explorer to version 0.9.5.
