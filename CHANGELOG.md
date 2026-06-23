@@ -1,5 +1,12 @@
 ## Changelog
 
+## v0.9.4.dev7 (2026-06-23)
+
+- Update pyproject.toml version and CHANGELOG.md for v0.9.4
+- Update CHANGELOG.
+- Do not create a new release upon merging a release PR.
+- Update ZEN-explorer to [version 0.9.9](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.9).
+
 ## v0.9.4 (2026-06-23)
 
 - Add new release workflow via GitHub Actions and PRs.
