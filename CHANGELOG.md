@@ -1,5 +1,10 @@
 ## Changelog
 
+## v0.9.6 (2026-06-30)
+
+- Open ZEN-explorer overview page when starting visualization platform.
+- Update ZEN-explorer to [version 0.9.11](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.11).
+
 ## v0.9.4 (2026-06-23)
 
 - Add new release workflow via GitHub Actions and PRs.
