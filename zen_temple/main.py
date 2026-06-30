@@ -30,9 +30,7 @@ app.mount("/api", api_app)
 # Mount explorer as static files
 explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
 explorer_url = "/"
-app.mount(
-    explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer"
-)
+app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
 
 
 def start_server(
@@ -65,7 +63,8 @@ def start_server(
 
     # Start the uvicorn server
     if not no_open_browser:
-        webbrowser.open(f"http://localhost:{port}/", new=2)
+        webbrowser.open(f"http://localhost:{port}/explorer/", new=2)
+    print(f"Open Visualization platform at http://localhost:{port}/explorer/")
     uvicorn.run(
         "zen_temple.main:app",
         host="localhost",
