@@ -25,7 +25,7 @@ Perform the following steps to install ZEN-temple:
    cd ZEN-temple
    ```
 
-1. Create a new conda environment, activate it, and install all dependencies:
+2. Create a new conda environment, activate it, and install all dependencies:
 
    ```bash
    conda create --name <your-env-name> python==3.13
@@ -33,7 +33,7 @@ Perform the following steps to install ZEN-temple:
    pip install -e .[mypy]
    ```
 
-2. Create a new copy of `.env`.
+3. Create a new copy of `.env`.
 
    ```bash
    cp .env.example .env
@@ -47,8 +47,17 @@ Open this folder in your terminal. Activate your conda environment for this proj
 
 ```bash
 conda activate <your-env-name>
-python -m zen_temple.main --reload
+zen-visualization --reload
 ```
+
+By default, ZEN-temple searches for solutions in `./outputs` and then in the
+current working directory. To select a solution folder explicitly, use:
+
+```bash
+zen-visualization --outputs-folder <path-to-solutions>
+```
+
+The equivalent module invocation is `python -m zen_temple.main --reload`.
 
 For information about the available command line arguments run:
 
