@@ -29,12 +29,11 @@ class SolutionDetail(BaseModel):
         """
         name = os.path.split(path)[-1]
         relative_path = os.path.relpath(path, start=config.SOLUTION_FOLDER)
-        results = Results(path, enable_cache=False)
+        results = Results(path)
         results_version = results.get_analysis().zen_garden_version
         scenario_details = {}
 
-        for scenario_name, scenario in results.solution_loader.scenarios.items():
-            system = scenario.system
+        for scenario_name, scenario in results.scenarios.items():
             reference_carriers = results.get_df(
                 get_variable_name("set_reference_carriers", results_version),
                 scenario_name=scenario_name,
@@ -65,7 +64,7 @@ class SolutionDetail(BaseModel):
             }
 
             scenario_details[scenario_name] = ScenarioDetail(
-                system=system,
+                system=scenario.system,
                 reference_carrier=reference_carriers,
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,

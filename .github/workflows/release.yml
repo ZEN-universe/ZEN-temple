@@ -33,8 +33,10 @@ jobs:
                 "${{ github.event.action }}" == "closed" && \
                 "${{ github.event.pull_request.merged }}" == "true" && \
                 "${{ contains(github.event.pull_request.labels.*.name, 'release') }}" == "true" ]]; then
+            echo "This is a release PR merge."
             echo "is_release_merge=true" >> $GITHUB_OUTPUT
           else
+            echo "This is NOT a release PR merge."
             echo "is_release_merge=false" >> $GITHUB_OUTPUT
           fi
 
