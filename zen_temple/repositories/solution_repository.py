@@ -77,7 +77,7 @@ class SolutionRepository:
         index = self.__build_index_for_carrier_and_node(component)
 
         # Get total
-        total: pd.DataFrame | pd.Series = self.scenario.get_total(component, index=index)
+        total = self.scenario.get_total(component, index=index)
 
         # Skip irrelevant rows in dataframes
         if type(total) is not pd.Series and not total.empty:
@@ -99,7 +99,6 @@ class SolutionRepository:
         """
         # Build index for filtering by carrier if specified
         index = self.__build_index_for_carrier_and_node(component)
-        print("index", index)
 
         # Get full time series
         full_ts = self.scenario.get_full_ts(component, year=self.year, index=index)
