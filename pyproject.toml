@@ -21,7 +21,7 @@ dependencies = [
     "uvicorn",
     "fastapi[standard]",
     "python-dotenv",
-    "zen-garden>=2.8.6",
+    "zen-garden>=2.13.0",
     "mypy>=1.14.1",
 ]
 
@@ -29,6 +29,9 @@ dependencies = [
 mypy = [
     "pandas-stubs",
 ]
+
+[project.scripts]
+zen-visualization = "zen_temple.cli:create_zen_visualization_cli"
 
 [project.urls]
 Homepage = "https://github.com/ZEN-universe/ZEN-temple"
