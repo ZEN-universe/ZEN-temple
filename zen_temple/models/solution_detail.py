@@ -34,22 +34,22 @@ class SolutionDetail(BaseModel):
         scenario_details = {}
 
         for scenario_name, scenario in results.scenarios.items():
-            reference_carriers = results.get_df(
+            reference_carriers = results.get_unprocessed_result(
                 get_variable_name("set_reference_carriers", results_version),
                 scenario_name=scenario_name,
             ).to_dict()
 
-            df_input_carriers = results.get_df(
+            df_input_carriers = results.get_unprocessed_result(
                 get_variable_name("set_input_carriers", results_version),
                 scenario_name=scenario_name,
             )
 
-            df_output_carriers = results.get_df(
+            df_output_carriers = results.get_unprocessed_result(
                 get_variable_name("set_output_carriers", results_version),
                 scenario_name=scenario_name,
             )
 
-            edges = results.get_df(
+            edges = results.get_unprocessed_result(
                 get_variable_name("set_nodes_on_edges", results_version),
                 scenario_name=scenario_name,
             )
