@@ -1,10 +1,13 @@
 import os
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from fastapi import HTTPException
-from zen_garden.postprocess.results import Results  # type: ignore[import-untyped]
+from zen_garden.postprocess.results import Results  # type: ignore
+from zen_garden.postprocess.results.scenario import (  # type: ignore
+    Scenario,
+)
 
 from ..config import config
 
@@ -26,26 +29,31 @@ class SolutionRepository:
     def __init__(
         self,
         solution_name: str,
-        scenario_name: Optional[str] = None,
-        carrier: Optional[str] = None,
-        node: Optional[str] = None,
-        year: Optional[int] = None,
+        scenario_name: str | None = None,
+        carrier: str | None = None,
+        node: str | None = None,
+        year: int | None = None,
         rolling_average_window_size: int = 1,
     ) -> None:
-        self.solution_name = solution_name
-        self.scenario_name = scenario_name
-        self.carrier = carrier
-        self.year = year
-        self.rolling_average_window_size = rolling_average_window_size
-        self.node = node
-        self.reference_technologies: Optional[list[str]] = None
+        self.solution_name: str = solution_name
+        self.scenario_name: str | None = scenario_name
+        self.carrier: str | None = carrier
+        self.year: int | None = year
+        self.rolling_average_window_size: int = rolling_average_window_size
+        self.node: str | None = node
+        self.reference_technologies: list[str] | None = None
 
         path = os.path.join(config.SOLUTION_FOLDER, *solution_name.split("."))
         if not os.path.exists(path) or not os.path.isdir(path):
             raise HTTPException(
                 status_code=404, detail=f"Solution {solution_name} not found"
             )
-        self.results = Results(path, enable_cache=False)
+        self.results: Results = Results(path)
+        self.scenario: Scenario = (
+            self.results.scenarios[scenario_name]
+            if scenario_name is not None
+            else self.results.first_scenario
+        )
 
     def get_unit(self, component: str) -> str:
         """
@@ -54,12 +62,12 @@ class SolutionRepository:
 
         :param component: Name of the component.
         """
-        unit = self.results.get_unit(component, convert_to_yearly_unit=True)
+        unit = self.scenario.get_unit(component, convert_to_yearly_unit=True)
         if type(unit) is str:
             unit = pd.DataFrame({0: [unit]})
         return self.__dataframe_to_csv(unit)
 
-    def get_total(self, component: str) -> Optional[str]:
+    def get_total(self, component: str) -> str | None:
         """
         Returns the total and the unit of a component for the current solution.
 
@@ -69,9 +77,7 @@ class SolutionRepository:
         index = self.__build_index_for_carrier_and_node(component)
 
         # Get total
-        total: pd.DataFrame | pd.Series[Any] = self.results.get_total(
-            component, scenario_name=self.scenario_name, index=index
-        )
+        total = self.scenario.get_total(component, index=index)
 
         # Skip irrelevant rows in dataframes
         if type(total) is not pd.Series and not total.empty:
@@ -95,9 +101,7 @@ class SolutionRepository:
         index = self.__build_index_for_carrier_and_node(component)
 
         # Get full time series
-        full_ts = self.results.get_full_ts(
-            component, scenario_name=self.scenario_name, year=self.year, index=index
-        )
+        full_ts = self.scenario.get_full_ts(component, year=self.year, index=index)
         if full_ts.shape[0] == 0:
             return []
 
@@ -116,15 +120,13 @@ class SolutionRepository:
         index = self.__build_index_for_carrier_and_node("flow_transport")
 
         # Get flow transport and flow transport loss dataframes
-        flow_transport = self.results.get_full_ts(
+        flow_transport = self.scenario.get_full_ts(
             "flow_transport",
-            scenario_name=self.scenario_name,
             year=self.year,
             index=index,
         )
-        flow_transport_loss = self.results.get_full_ts(
+        flow_transport_loss = self.scenario.get_full_ts(
             "flow_transport_loss",
-            scenario_name=self.scenario_name,
             year=self.year,
             index=index,
         )
@@ -154,13 +156,14 @@ class SolutionRepository:
 
         :param component: Name of the component.
         """
+        if not self.scenario.solver.save_duals:
+            return []
+
         # Build index for filtering by carrier and node
         index = self.__build_index_for_carrier_and_node(component)
 
         # Get dual dataframe
-        dual = self.results.get_dual(
-            component, self.scenario_name, self.year, index=index
-        )
+        dual = self.scenario.get_dual(component, self.year, index=index)
         if dual is None:
             return []
 
@@ -172,17 +175,13 @@ class SolutionRepository:
         """
         Sets the earliest year of data for the current scenario to the earliest year available in the results.
         """
-        earliest_year = self.results.get_analysis(
-            self.scenario_name
-        ).earliest_year_of_data
-        if earliest_year is not None:
-            self.year = int(earliest_year)
+        self.year = self.scenario.analysis.earliest_year_of_data
 
     def get_scenario_names(self) -> list[str]:
         """
         Returns the list of available scenarios for the current solution.
         """
-        return list(self.results.solution_loader.scenarios.keys())
+        return list(self.results.scenarios.keys())
 
     def __skip_irrelevant_rows(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -210,15 +209,13 @@ class SolutionRepository:
         if self.node is None:
             return df
         idx = 0 if direction == "out" else 1
-        edges = self.results.get_df("set_nodes_on_edges", self.scenario_name)
+        edges = self.scenario.get_values("set_nodes_on_edges")
         edges = [
             edge for edge, nodes in edges.items() if nodes.split(",")[idx] == self.node
         ]
         return df.loc[(slice(None), edges), :]
 
-    def __build_index_for_carrier_and_node(
-        self, component: str
-    ) -> Optional[dict[str, str | list[str]]]:
+    def __build_index_for_carrier_and_node(self, component: str) -> dict[str, str] | None:
         """
         Builds an index for filtering by carrier if specified.
 
@@ -227,27 +224,47 @@ class SolutionRepository:
         if self.carrier is None and self.node is None:
             return None
 
-        index_names = self.results.get_index_names(component, self.scenario_name)
-        index: dict[str, str | list[str]] = {}
+        index_names = self.scenario.get_index_names(component)
+        index: dict[str, str] = {}
 
-        if self.node is not None and "node" in index_names:
-            index["node"] = self.node
+        if self.node is not None and "set_nodes" in index_names:
+            index["set_nodes"] = f"set_nodes == {self.node!r}"
         elif self.node is not None:
             print(
                 f"Warning: Cannot filter by node {self.node}: no 'node' index level for component {component} found.",
             )
 
-        if self.carrier is not None and "carrier" in index_names:
-            index["carrier"] = self.carrier
-        elif self.carrier is not None and "technology" in index_names:
+        carrier_index_names = self._index_names_of_header("carrier") & set(index_names)
+        technology_index_names = self._index_names_of_header("technology") & set(
+            index_names
+        )
+        if self.carrier is not None and len(carrier_index_names) > 0:
+            dim = carrier_index_names.pop()
+            index[dim] = f"{dim} == {self.carrier!r}"
+        elif self.carrier is not None and len(technology_index_names) > 0:
+            dim = technology_index_names.pop()
             reference_technologies = self.__get_reference_technologies()
-            index["technology"] = reference_technologies
+            index[dim] = f"{dim} in {reference_technologies!r}"
         elif self.carrier is not None:
             print(
                 f"Warning: Cannot filter by carrier {self.carrier}: no 'carrier' or 'technology' index level for component {component} found."
             )
 
         return index
+
+    def _index_names_of_header(self, header: str) -> set[str]:
+        """Returns the index names that belong to the given header.
+
+        :param header: Name of the header.
+        :return List of index names that map to the given header name.
+        """
+        return set(
+            [
+                key
+                for key, value in self.scenario.analysis.header_data_inputs.items()
+                if value == header
+            ]
+        )
 
     def __get_reference_technologies(self) -> list[str]:
         """
@@ -259,9 +276,7 @@ class SolutionRepository:
         if self.reference_technologies is not None:
             return self.reference_technologies
 
-        reference_carriers = self.results.get_df(
-            "set_reference_carriers", scenario_name=self.scenario_name
-        )
+        reference_carriers = self.scenario.get_values("set_reference_carriers")
         reference_technologies = reference_carriers[
             reference_carriers == self.carrier
         ].index.tolist()

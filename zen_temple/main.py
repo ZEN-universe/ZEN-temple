@@ -114,6 +114,7 @@ def parse_arguments_and_run() -> None:
     group.add_argument(
         "-o",
         "--outputs-folder",
+        "--output",
         required=False,
         type=str,
         default=None,
