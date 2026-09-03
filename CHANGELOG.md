@@ -1,5 +1,10 @@
 ## Changelog
 
+## v0.10.0 (2026-09-03)
+
+- Adapt ZEN-temple to the changes in ZEN-garden for v3
+- Visualization CLI is moved from ZEN-garden to ZEN-temple to remove the circular dependency, which prohibited for publication on conda.
+
 ## v0.9.6 (2026-06-30)
 
 - Open ZEN-explorer overview page when starting visualization platform.
