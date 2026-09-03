@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
-from zen_garden.default_config import System  # type: ignore
+from zen_garden.config import System  # type: ignore
 from zen_garden.postprocess.results import Results  # type: ignore
 
 from zen_temple.versions import get_variable_name

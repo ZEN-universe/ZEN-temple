@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from zen_garden.default_config import System  # type: ignore
+from zen_garden.config import System  # type: ignore
 
 
 class ScenarioDetail(BaseModel):
