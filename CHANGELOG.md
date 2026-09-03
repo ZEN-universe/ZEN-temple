@@ -1,5 +1,10 @@
 ## Changelog
 
+## v0.10.0.dev2 (2026-09-03)
+
+
+- Update ZEN-explorer to [version 0.9.12](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.12).
+
 ## v0.10.0 (2026-09-03)
 
 - Adapt ZEN-temple to the changes in ZEN-garden for v3
