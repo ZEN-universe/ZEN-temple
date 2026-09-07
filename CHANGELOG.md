@@ -3,6 +3,13 @@
 ## v0.10.1.dev2 (2026-09-07)
 
 - Release v0.10.1.dev2
+- Release v0.10.1.dev2
+- Release v0.10.0.dev1
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
+## v0.10.1.dev2 (2026-09-07)
+
+- Release v0.10.1.dev2
 - Release v0.10.0.dev1
 - Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
 
