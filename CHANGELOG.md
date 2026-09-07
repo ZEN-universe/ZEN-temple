@@ -1,5 +1,9 @@
 ## Changelog
 
+## 0.10.1 (2026-09-07)
+
+- Summarize your changes ...
+
 ## v0.10.0 (2026-09-03)
 
 - Adapt ZEN-temple to the changes in ZEN-garden for v3

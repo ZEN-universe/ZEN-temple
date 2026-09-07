@@ -62,10 +62,15 @@ class SolutionDetail(BaseModel):
                 key: [v for v in val.split(",") if v != ""]
                 for key, val in df_output_carriers.to_dict().items()
             }
+            carriers = sorted(
+                {c for cs in carriers_input_dict.values() for c in cs}
+                | {c for cs in carriers_output_dict.values() for c in cs}
+            )
 
             scenario_details[scenario_name] = ScenarioDetail(
                 system=scenario.system,
                 reference_carrier=reference_carriers,
+                carriers=carriers,
                 carriers_input=carriers_input_dict,
                 carriers_output=carriers_output_dict,
                 edges=edges.to_dict(),

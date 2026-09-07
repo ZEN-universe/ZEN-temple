@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zen_temple"
-version = "0.10.0"
+version = "0.10.1"
 authors = [
   { name="ZEN-garden developers", email="zen-garden@ethz.ch" },
 ]
@@ -32,6 +32,7 @@ mypy = [
 
 [project.scripts]
 zen-visualization = "zen_temple.cli:create_zen_visualization_cli"
+zen-temple-fetch-explorer = "zen_temple.fetch_explorer:main"
 
 [project.urls]
 Homepage = "https://github.com/ZEN-universe/ZEN-temple"
