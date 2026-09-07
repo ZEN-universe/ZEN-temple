@@ -9,6 +9,7 @@ class ScenarioDetail(BaseModel):
 
     system: System
     reference_carrier: dict[str, str]
+    carriers: list[str]
     carriers_input: dict[str, list[str]]
     carriers_output: dict[str, list[str]]
     edges: dict[str, str]

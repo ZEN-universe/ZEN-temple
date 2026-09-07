@@ -1,4 +1,4 @@
-import os
+import socket
 import webbrowser
 from argparse import ArgumentParser, BooleanOptionalAction
 from pathlib import Path
@@ -27,10 +27,85 @@ api_app = FastAPI()
 api_app.include_router(solution_router.router)
 app.mount("/api", api_app)
 
+_PLACEHOLDER_INDEX = """<!doctype html>
+<html lang="en">
+<head>
+\t<meta charset="utf-8">
+\t<meta name="viewport" content="width=device-width, initial-scale=1">
+\t<title>ZEN temple</title>
+</head>
+<body>
+\t<h1>Welcome to ZEN temple</h1>
+\t<p>The ZEN-explorer frontend has not been fetched yet. Run <code>zen-temple-fetch-explorer</code> to download it, or build ZEN-explorer from source and copy it into the <code>zen_temple/explorer/</code> folder.</p>
+</body>
+</html>
+"""
+
+
+def _ensure_explorer_dir(path: Path) -> None:
+    """Make sure the explorer directory exists so StaticFiles can mount it.
+
+    The directory contents are gitignored and only populated by the release
+    build or by ``zen-temple-fetch-explorer``. On a fresh editable checkout it
+    can be missing entirely, so seed it with a placeholder page.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    index = path / "index.html"
+    if not index.exists():
+        index.write_text(_PLACEHOLDER_INDEX, encoding="utf-8")
+
+
+def _check_explorer_populated(path: Path) -> None:
+    """Fail early with a helpful message if the ZEN-explorer build is missing.
+
+    In an editable install the ``explorer`` folder only holds the placeholder
+    page until the frontend is fetched, so ``_app/`` (the SvelteKit build) does
+    not exist yet and the server would crash while writing ``_app/env.js``.
+    """
+    if (path / "_app").is_dir():
+        return
+    raise SystemExit(
+        "The ZEN-explorer frontend has not been fetched yet, so the "
+        "visualization platform cannot start.\n"
+        f"Expected build files in: {path}\n\n"
+        "Run\n"
+        "    zen-temple-fetch-explorer\n"
+        "to download them from the latest published release (add "
+        "'--version <x.y.z>' to pin one), or build ZEN-explorer from source "
+        "and copy its 'build/' contents into that folder."
+    )
+
+
 # Mount explorer as static files
-explorer_path = os.path.join(os.path.dirname(__file__), "explorer")
+explorer_path = Path(__file__).parent / "explorer"
+_ensure_explorer_dir(explorer_path)
 explorer_url = "/"
 app.mount(explorer_url, StaticFiles(directory=explorer_path, html=True), name="explorer")
+
+
+def _check_port_available(host: str, port: int) -> None:
+    """Fail early with a clear message if the server port is already taken.
+
+    """
+    try:
+        addr_infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    except socket.gaierror:
+        # Let uvicorn deal with a host name it cannot resolve.
+        return
+
+    for family, socktype, proto, _canonname, sockaddr in addr_infos:
+        with socket.socket(family, socktype, proto) as probe:
+            if family == socket.AF_INET6 and hasattr(socket, "IPV6_V6ONLY"):
+                probe.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+            try:
+                probe.bind(sockaddr)
+            except OSError as exc:
+                raise SystemExit(
+                    f"Cannot start the ZEN-temple server: port {port} on "
+                    f"'{host}' is not available ({exc}).\n"
+                    "Another 'zen-visualization' instance is most likely still "
+                    "running on this port."
+                ) from exc
 
 
 def start_server(
@@ -43,6 +118,7 @@ def start_server(
     reload: bool = False,
     no_open_browser: bool = False,
     fd: int | None = None,
+    api_only: bool = False,
 ) -> None:
     if api_url is None:
         api_url = f"http://127.0.0.1:{port}/api/"
@@ -55,16 +131,24 @@ def start_server(
     if significant_digits is not None:
         config.RESPONSE_SIGNIFICANT_DIGITS = significant_digits
 
-    env_file = Path(__file__).parent / "explorer" / "_app" / "env.js"
-    with open(env_file, "w") as file:
-        file.write(
-            f'export const env={{"PUBLIC_TEMPLE_URL":"{api_url}", "PUBLIC_APP_NAME":"{app_name}"}}'
-        )
+    # When binding by file descriptor uvicorn does not open the port itself.
+    if fd is None:
+        _check_port_available("localhost", port)
 
-    # Start the uvicorn server
-    if not no_open_browser:
-        webbrowser.open(f"http://localhost:{port}/explorer/", new=2)
-    print(f"Open Visualization platform at http://localhost:{port}/explorer/")
+    if api_only:
+        # Frontend developers run the ZEN-explorer dev server separately, so the
+        # bundled frontend is neither needed nor served here.
+        print(f"Serving the ZEN-temple API only at http://localhost:{port}/api/")
+    else:
+        _check_explorer_populated(explorer_path)
+        env_file = explorer_path / "_app" / "env.js"
+        with open(env_file, "w") as file:
+            file.write(
+                f'export const env={{"PUBLIC_TEMPLE_URL":"{api_url}", "PUBLIC_APP_NAME":"{app_name}"}}'
+            )
+        if not no_open_browser:
+            webbrowser.open(f"http://localhost:{port}/explorer/", new=2)
+        print(f"Open Visualization platform at http://localhost:{port}/explorer/")
     uvicorn.run(
         "zen_temple.main:app",
         host="localhost",
@@ -163,6 +247,15 @@ def parse_arguments_and_run() -> None:
         help="do not open the browser automatically",
     )
     group.add_argument(
+        "--api-only",
+        required=False,
+        action="store_true",
+        help=(
+            "serve only the REST API and do not require the bundled ZEN-explorer "
+            "frontend. Use this when developing ZEN-explorer with its own dev server"
+        ),
+    )
+    group.add_argument(
         "--fd",
         required=False,
         type=int,
@@ -183,6 +276,7 @@ def parse_arguments_and_run() -> None:
         reload=args.reload,
         no_open_browser=args.no_open_browser,
         fd=args.fd,
+        api_only=args.api_only,
     )
 
 

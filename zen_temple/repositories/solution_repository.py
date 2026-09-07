@@ -215,20 +215,23 @@ class SolutionRepository:
         ]
         return df.loc[(slice(None), edges), :]
 
-    def __build_index_for_carrier_and_node(self, component: str) -> dict[str, str] | None:
+    def __build_index_for_carrier_and_node(
+            self, component: str) -> dict[str, list[str]] | None:
         """
         Builds an index for filtering by carrier if specified.
 
         :param component: Name of the component.
+        :return: A dictionary with the index names and values to filter by, 
+            or None if no filtering is needed.
         """
         if self.carrier is None and self.node is None:
             return None
 
         index_names = self.scenario.get_index_names(component)
-        index: dict[str, str] = {}
+        index: dict[str, list[str]] = {}
 
         if self.node is not None and "set_nodes" in index_names:
-            index["set_nodes"] = f"set_nodes == {self.node!r}"
+            index["node"] = [self.node]
         elif self.node is not None:
             print(
                 f"Warning: Cannot filter by node {self.node}: no 'node' index level for component {component} found.",
@@ -239,12 +242,10 @@ class SolutionRepository:
             index_names
         )
         if self.carrier is not None and len(carrier_index_names) > 0:
-            dim = carrier_index_names.pop()
-            index[dim] = f"{dim} == {self.carrier!r}"
+            index["carrier"] = [self.carrier]
         elif self.carrier is not None and len(technology_index_names) > 0:
-            dim = technology_index_names.pop()
             reference_technologies = self.__get_reference_technologies()
-            index[dim] = f"{dim} in {reference_technologies!r}"
+            index["technology"] = reference_technologies
         elif self.carrier is not None:
             print(
                 f"Warning: Cannot filter by carrier {self.carrier}: no 'carrier' or 'technology' index level for component {component} found."
