@@ -1,5 +1,22 @@
 ## Changelog
 
+## v0.10.1.dev2 (2026-09-07)
+
+- Release v0.10.1.dev2
+- Release v0.10.0.dev1
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
+## v0.10.1.dev2 (2026-09-07)
+
+- Release v0.10.0.dev1
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
+## v0.10.0.dev1 (2026-09-07)
+
+- fix indexing, carrier selection, helpers, fetch explorer pages, improve readme
+- fix indexing, carrier selection, helpers, fetch explorer without running frontend, improve readme
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
 ## 0.10.1 (2026-09-07)
 
 - Summarize your changes ...
