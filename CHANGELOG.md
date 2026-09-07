@@ -2,6 +2,12 @@
 
 ## v0.10.1.dev3 (2026-09-07)
 
+- Release v0.10.1.dev3
+- Improve release workflow README
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
+## v0.10.1.dev3 (2026-09-07)
+
 - Improve release workflow README
 - Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
 
