@@ -158,21 +158,27 @@ to start its dev server with `npm run dev`. The UI is served from
 
 ## 📤 Release workflow
 
-To create a new release of ZEN-temple follow the steps below. For each major
-release (e.g. from `v0.4.x` to `v0.5.0`) the version numbers of ZEN-explorer and
-ZEN-temple are kept in sync. The `scripts/bump_version.sh` helper must be run in
-**bash** (Git Bash or WSL on Windows).
+Releases are driven by the `Release` GitHub Actions workflow. Do not edit
+`pyproject.toml` or `CHANGELOG.md` by hand.
 
-1. Bump version in ZEN-explorer `bash scripts/bump_version.sh` and update its CHANGELOG.md.
-2. Commit and upload the updated files to GitHub.
-3. Create a new release for ZEN-explorer:
-   https://github.com/ZEN-universe/ZEN-explorer/releases/new
-4. Bump version in ZEN-temple `bash scripts/bump_version.sh` and update [CHANGELOG.md](CHANGELOG.md).
-5. Commit and upload the updated files to GitHub.
-6. Create a new release for ZEN-temple, e.g. `<version>`. For a pre-release also add a suffix `.dev1`, i.e. `<version>.dev1`, and mark the release as pre-release:
-   https://github.com/ZEN-universe/ZEN-temple/releases/new
-7. (optional) Look at PyPI whether the new release has successfully been created:
-   https://pypi.org/project/zen-temple/#history
+1. **Merge your changes into `main`.** The workflow then opens (or updates) a
+   pull request titled `Release vX.Y.Z.devN`, labelled `release`, that bumps the
+   version and prepends a `CHANGELOG.md` entry.
+2. **Set the version and notes on that PR.** Edit its **title**
+   (`Release vX.Y.Z` for a full release, keep the `.devN` suffix for a
+   pre-release) and its **description** (becomes the CHANGELOG body). A workflow
+   run rewrites the files on the PR branch. Keep the `release` label.
+3. **Merge the release PR.** This only creates a **draft** GitHub release – no
+   tag, no PyPI upload yet.
+4. **Publish the draft** at <https://github.com/ZEN-universe/ZEN-temple/releases>:
+   open it, set the pre-release flag as needed, click **Publish release**. This
+   creates the `vX.Y.Z` tag and triggers the `Publish … to PyPI` workflow
+   (~7 min; it builds ZEN-explorer `main` into the package).
+5. **Verify** the version at <https://pypi.org/project/zen-temple/#history>.
+
+Until the tag from step 4 exists, every push to `main` re-opens a release PR. A
+release PR merged without the `release` label, or with a title that is not
+`Release vX.Y.Z[.devN]`, is not turned into a draft release.
 
 ## 🗂️ Folder structure
 
