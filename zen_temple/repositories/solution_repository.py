@@ -11,6 +11,10 @@ from zen_garden.postprocess.results.scenario import (  # type: ignore
 
 from ..config import config
 
+# Placeholder value used to filter a technology level down to nothing when the
+# selected carrier has no matching reference technologies.
+_NO_MATCH_SENTINEL = "__no_matching_technology__"
+
 
 class SolutionRepository:
     """
@@ -227,25 +231,28 @@ class SolutionRepository:
         if self.carrier is None and self.node is None:
             return None
 
-        index_names = self.scenario.get_index_names(component)
+        headers = self._component_headers(component)
         index: dict[str, list[str]] = {}
 
-        if self.node is not None and "set_nodes" in index_names:
+        if self.node is not None and "node" in headers:
             index["node"] = [self.node]
         elif self.node is not None:
             print(
                 f"Warning: Cannot filter by node {self.node}: no 'node' index level for component {component} found.",
             )
 
-        carrier_index_names = self._index_names_of_header("carrier") & set(index_names)
-        technology_index_names = self._index_names_of_header("technology") & set(
-            index_names
-        )
-        if self.carrier is not None and len(carrier_index_names) > 0:
+        if self.carrier is not None and "carrier" in headers:
+            # Components with a carrier level (e.g. conversion in-/output flows)
+            # are filtered directly to the selected carrier.
             index["carrier"] = [self.carrier]
-        elif self.carrier is not None and len(technology_index_names) > 0:
+        elif self.carrier is not None and "technology" in headers:
+            # Components without a carrier level (e.g. storage charge/discharge
+            # and transport flows) only carry their reference carrier, so we
+            # filter them to the technologies whose reference carrier matches.
             reference_technologies = self.__get_reference_technologies()
-            index["technology"] = reference_technologies
+            # An empty list would be dropped by the query builder and let every
+            # technology through, so fall back to a sentinel that matches none.
+            index["technology"] = reference_technologies or [_NO_MATCH_SENTINEL]
         elif self.carrier is not None:
             print(
                 f"Warning: Cannot filter by carrier {self.carrier}: no 'carrier' or 'technology' index level for component {component} found."
@@ -253,19 +260,22 @@ class SolutionRepository:
 
         return index
 
-    def _index_names_of_header(self, header: str) -> set[str]:
-        """Returns the index names that belong to the given header.
+    def _component_headers(self, component: str) -> set[str]:
+        """Returns the friendly header names present in a component's index.
 
-        :param header: Name of the header.
-        :return List of index names that map to the given header name.
+        :param component: Name of the component.
+        :return: The set of friendly header names of the component's index.
         """
-        return set(
-            [
-                key
-                for key, value in self.scenario.analysis.header_data_inputs.items()
-                if value == header
-            ]
+        header_data_inputs = self.scenario.analysis.header_data_inputs
+        header_map = (
+            header_data_inputs
+            if isinstance(header_data_inputs, dict)
+            else header_data_inputs.model_dump()
         )
+        return {
+            header_map.get(name, name)
+            for name in self.scenario.get_index_names(component)
+        }
 
     def __get_reference_technologies(self) -> list[str]:
         """
