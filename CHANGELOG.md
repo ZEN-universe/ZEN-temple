@@ -1,5 +1,11 @@
 ## Changelog
 
+## v0.10.2 (2026-09-08)
+
+- Update pyproject.toml version and CHANGELOG.md for v0.10.2.dev1
+- fix to show correct carrier in production map
+- Update ZEN-explorer to [version 0.9.15](https://github.com/ZEN-universe/ZEN-explorer/releases/tag/v0.9.15).
+
 ## v0.10.2.dev1 (2026-09-08)
 
 - fix to show correct carrier in production map
